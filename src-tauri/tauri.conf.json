@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "夏序 SummerFlow",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "identifier": "com.summerflow.studytracker",
   "build": {
     "frontendDist": "../dist",

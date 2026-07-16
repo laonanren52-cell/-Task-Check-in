@@ -1,6 +1,6 @@
 [package]
 name = "summerflow"
-version = "0.1.1"
+version = "0.1.2"
 description = "Local First personal study tracker and daily check-in application"
 authors = ["SummerFlow Contributors"]
 repository = "https://github.com/laonanren52-cell/-Task-Check-in"

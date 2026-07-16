@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.1.2] - 2026-07-17
+
+### Fixed
+
+- 修复 GitHub Actions updater metadata 生成流程：从已签名的 NSIS 安装包及其 `.sig` 生成 `latest.json`。
+- 修复 Release 缺少 `latest.json` 导致桌面端自动更新不可用的问题。
+- 保留 0.1.1 已完成的任务流、每日复盘与设置页界面优化；未修改 IndexedDB、数据库名称或 Tauri identifier。
+
 ## [0.1.1] - 2026-07-17
 
 ### Fixed
