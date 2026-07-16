@@ -14,6 +14,7 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
   const { themes, subjects, saveTask, deleteTasks, reorderTasks } = useAppStore()
   const [editing, setEditing] = useState<Task>()
   const [deleting, setDeleting] = useState<Task>()
+  const [activeMenu, setActiveMenu] = useState<string>()
   const toast = useToast()
   const theme = new Map(themes.map(item => [item.id, item.name]))
   const subject = new Map(subjects.map(item => [item.id, item.name]))
@@ -42,7 +43,7 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
   if (!tasks.length) return null
   return <div className="task-list">
     {tasks.map((task, index) => <article
-      className={`task-card task-card--${task.priority.toLowerCase()}`}
+      className={`task-card task-card--${task.priority.toLowerCase()} ${activeMenu === task.id ? 'is-menu-open' : ''}`}
       key={task.id}
       draggable={reorder}
       onDragStart={event => event.dataTransfer.setData('text/plain', task.id)}
@@ -55,7 +56,8 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
       <button className="task-card__body" onClick={() => setEditing(task)}>
         <div className="task-card__meta"><PriorityIndicator priority={task.priority} /><span>{theme.get(task.themeId) ?? '未分类'}</span><span>{subject.get(task.subjectId) ?? '未分类'}</span></div>
         <h3>{task.name}</h3>
-        <p>{task.detail || '尚未补充子任务'} · 计划 {task.plannedDuration} 分钟 · 实际 {task.actualDuration} 分钟 · 专注 {task.focusScore ?? 0} · 精力 {task.energyScore ?? 0}</p>
+        <p>{task.detail || '尚未补充子任务'}</p>
+        <div className="task-card__stats"><span>计划 {task.plannedDuration} 分钟</span><span>实际 {task.actualDuration} 分钟</span><span>专注 {task.focusScore ?? 0}</span><span>精力 {task.energyScore ?? 0}</span></div>
         {task.output && <div className="task-output">成果：{task.output}</div>}
         {task.note && <div className="task-note">备注：{task.note}</div>}
       </button>
@@ -63,10 +65,10 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
         <select className={`quick-status badge--${task.status}`} value={task.status} onChange={event => changeStatus(task, event.target.value as TaskStatus)} aria-label={`修改“${task.name}”的状态`}>
           {statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select>
-        <details className="more-menu">
-          <summary aria-label="更多操作"><MoreHorizontal /></summary>
-          <div><button onClick={() => setEditing(task)}><Pencil />编辑</button><button onClick={() => copy(task)}><Copy />复制</button><button className="danger-text" onClick={() => setDeleting(task)}><Trash2 />删除</button></div>
-        </details>
+        <div className="more-menu">
+          <button className="more-menu__trigger" aria-label="更多操作" aria-expanded={activeMenu === task.id} onClick={() => setActiveMenu(activeMenu === task.id ? undefined : task.id)}><MoreHorizontal /></button>
+          {activeMenu === task.id && <div className="more-menu__panel" role="menu"><button onClick={() => { setEditing(task); setActiveMenu(undefined) }}><Pencil />编辑</button><button onClick={() => { void copy(task); setActiveMenu(undefined) }}><Copy />复制</button><button className="danger-text" onClick={() => { setDeleting(task); setActiveMenu(undefined) }}><Trash2 />删除</button></div>}
+        </div>
       </div>
     </article>)}
     {editing && <TaskDrawer task={editing} onClose={() => setEditing(undefined)} />}
