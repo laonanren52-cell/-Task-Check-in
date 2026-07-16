@@ -2,7 +2,7 @@ import type { SummerFlowDatabase } from '../../db/database'
 import { db } from '../../db/database'
 import { defaultSettings, defaultSubjects, defaultTemplates, defaultThemes } from '../../db/defaults'
 import { createId, stableId } from '../../lib/id'
-import type { DailyRecord, Priority, Subject, Task, TaskStatus, TaskTemplate, Theme } from '../../types'
+import type { BackupData, DailyRecord, Priority, Subject, Task, TaskStatus, TaskTemplate, Theme } from '../../types'
 import { legacyDataSchema, type LegacyData } from './schema'
 
 export const LEGACY_STORAGE_KEY = 'summer-growth-v3'
@@ -36,6 +36,11 @@ export function convertLegacyData(parsed:LegacyData) {
   const dates=unique([...Object.keys(parsed.checkins),...Object.keys(parsed.dailyNotes)])
   const dailyRecords=dates.map((date):DailyRecord=>({date,checkedIn:Boolean(parsed.checkins[date]),checkinTime:parsed.checkins[date]?now:undefined,isMakeup:false,review:parsed.dailyNotes[date]?.review??'',nextStep:parsed.dailyNotes[date]?.nextStep??'',achievement:'',problem:'',satisfaction:'',createdAt:now,updatedAt:now}))
   return {settings,themes,subjects,templates,tasks,dailyRecords}
+}
+
+export function convertLegacyBackup(raw:string): BackupData {
+  const converted=convertLegacyData(parseLegacyData(raw))
+  return {schemaVersion:2,exportedAt:new Date().toISOString(),...converted}
 }
 
 export async function migrateLegacyStorage(storage:Pick<Storage,'getItem'>=localStorage,database:SummerFlowDatabase=db) {

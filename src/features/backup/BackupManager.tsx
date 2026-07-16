@@ -6,6 +6,7 @@ import { useToast } from '../../components/ui/Toast'
 import { isTauriRuntime } from '../../desktop/environment/platform'
 import { createAutomaticBackup, openBackupFolder, pickBackupFile, saveBackupWithDialog } from '../../desktop/filesystem/backup'
 import { logError, logInfo } from '../../desktop/logging/logger'
+import { convertLegacyBackup } from '../migration/legacy'
 import { useAppStore } from '../../stores/appStore'
 import type { BackupData } from '../../types'
 import { tasksToCsv } from './csv'
@@ -48,7 +49,15 @@ export function BackupManager() {
   }
   const parse = async (raw: string) => {
     try { setPreview(backupSchema.parse(JSON.parse(raw)) as BackupData) }
-    catch (error) { await logError('backup.import.invalid', error); toast(`导入文件无效：${error instanceof Error ? error.message : '未知格式'}`, 'error') }
+    catch (backupError) {
+      try {
+        setPreview(convertLegacyBackup(raw))
+        toast('已识别旧版学习打卡备份，导入后会自动转换为当前数据结构')
+      } catch (legacyError) {
+        await logError('backup.import.invalid', legacyError, { currentFormatError: backupError instanceof Error ? backupError.message : 'unknown' })
+        toast(`导入文件无效：${legacyError instanceof Error ? legacyError.message : '未知格式'}`, 'error')
+      }
+    }
   }
   const readBrowserFile = async (file?: File) => {
     if (!file) return
