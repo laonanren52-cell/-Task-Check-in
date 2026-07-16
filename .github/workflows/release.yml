@@ -124,5 +124,5 @@ jobs:
         shell: pwsh
         run: |
           "## SummerFlow $env:GITHUB_REF_NAME" >> $env:GITHUB_STEP_SUMMARY
-          "Tauri artifacts: ${{ steps.tauri.outputs.artifactPaths }}" >> $env:GITHUB_STEP_SUMMARY
+          "NSIS, MSI, their updater signatures, and latest.json were uploaded to the GitHub Release." >> $env:GITHUB_STEP_SUMMARY
           "Updater metadata and signatures were uploaded to the GitHub Release." >> $env:GITHUB_STEP_SUMMARY
