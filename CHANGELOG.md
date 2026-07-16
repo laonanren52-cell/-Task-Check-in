@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.1.1] - 2026-07-17
+
+### Fixed
+
+- 修复 GitHub Actions updater metadata 生成与 `latest.json` 上传链路。
+- 修复 `latest.json` 缺失时缺少发布资产和构建产物诊断的问题。
+- 完成 Tauri 自动更新发布链路配置。
+
 ## [0.1.0] - 2026-07-16
 
 ### Added

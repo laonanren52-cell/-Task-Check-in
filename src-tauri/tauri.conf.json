@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "夏序 SummerFlow",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.summerflow.studytracker",
   "build": {
     "frontendDist": "../dist",
@@ -30,7 +30,10 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "createUpdaterArtifacts": true,
     "publisher": "SummerFlow Contributors",
     "category": "Education",
@@ -45,15 +48,22 @@
       "icons/icon.ico"
     ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installerIcon": "icons/icon.ico",
         "installMode": "currentUser",
-        "languages": ["SimpChinese", "English"],
+        "languages": [
+          "SimpChinese",
+          "English"
+        ],
         "displayLanguageSelector": false,
         "startMenuFolder": "SummerFlow"
       },
-      "wix": { "language": "zh-CN" }
+      "wix": {
+        "language": "zh-CN"
+      }
     }
   },
   "plugins": {
@@ -62,7 +72,9 @@
         "https://github.com/laonanren52-cell/-Task-Check-in/releases/latest/download/latest.json"
       ],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQyMTA3OTRERDRBMUM1NDcKUldSSHhhSFVUWGtRUWdzQXR2YTEzRGthUitPUW03dHRtWUQ5OWptUWRiaUw0WGp5enpPWS9qZGEK",
-      "windows": { "installMode": "passive" }
+      "windows": {
+        "installMode": "passive"
+      }
     }
   }
 }

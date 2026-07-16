@@ -59,10 +59,8 @@ jobs:
           releaseDraft: false
           prerelease: false
           args: --target x86_64-pc-windows-msvc
+          includeUpdaterJson: true
           updaterJsonPreferNsis: true
-          uploadUpdaterJson: true
-          uploadUpdaterSignatures: true
-          uploadWorkflowArtifacts: true
 
       - name: Enrich updater policy metadata
         shell: pwsh
@@ -71,6 +69,20 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force updater-metadata | Out-Null
           gh release download "$env:GITHUB_REF_NAME" --pattern latest.json --dir updater-metadata
+          $metadataPath = 'updater-metadata/latest.json'
+          if (-not (Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
+            Write-Host '::error title=Missing updater latest.json::The Tauri action did not upload latest.json to the current Release.'
+            Write-Host "Release assets for $env:GITHUB_REF_NAME:"
+            gh release view "$env:GITHUB_REF_NAME" --json assets --jq '.assets[] | "\(.name)\t\(.size) bytes\t\(.url)"'
+            Write-Host 'Generated files under src-tauri/target/release/bundle:'
+            if (Test-Path -LiteralPath 'src-tauri/target/release/bundle') {
+              Get-ChildItem -LiteralPath 'src-tauri/target/release/bundle' -Recurse -File |
+                ForEach-Object { "$($_.FullName) ($($_.Length) bytes)" }
+            } else {
+              Write-Host 'src-tauri/target/release/bundle was not generated.'
+            }
+            throw 'Updater metadata is missing from the current Release. Check the Tauri action output and signing secrets.'
+          }
           node scripts/enrich-updater-json.mjs updater-metadata/latest.json updater-metadata/latest.json
           gh release upload "$env:GITHUB_REF_NAME" updater-metadata/latest.json --clobber
 
