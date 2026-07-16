@@ -1,7 +1,9 @@
 import { format, isBefore, parseISO } from 'date-fns'
-import { Award, Calendar, CheckCircle2, Clock3, Flame, Plus, Target } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { Award, Calendar, CheckCircle2, Clock3, Flame, Plus } from 'lucide-react'
+import { useMemo, useRef, useState } from 'react'
 import { useOutletContext, useSearchParams } from 'react-router-dom'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
 import { Dialog } from '../components/ui/Dialog'
@@ -30,6 +32,12 @@ export function TodayPage() {
   const checkedDays = dailyRecords.filter(item => item.checkedIn).length
   const cumulativeMinutes = tasks.reduce((sum, task) => sum + task.actualDuration, 0)
   const completedTasks = tasks.filter(task => task.status === 'done').length
+  const pageRef = useRef<HTMLDivElement>(null)
+
+  useGSAP(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    gsap.fromTo('.today-reveal', { autoAlpha: 0, y: 10 }, { autoAlpha: 1, y: 0, duration: .46, stagger: .055, ease: 'power2.out', clearProps: 'transform' })
+  }, { scope: pageRef, dependencies: [selected, dateTasks.length], revertOnUpdate: true })
 
   const toggle = async () => {
     const now = new Date().toISOString()
@@ -55,8 +63,8 @@ export function TodayPage() {
     toast(record?.checkedIn ? '已取消正式打卡' : makeup ? '补签记录已完成' : '今日打卡完成')
   }
 
-  return <div className="page">
-    <PageHeader
+  return <div className="page today-page" ref={pageRef}>
+    <div className="today-reveal"><PageHeader
       eyebrow={format(parseISO(selected), 'yyyy 年 M 月 d 日 · EEEE')}
       title="今天的学习，有序推进。"
       description="同一天可以记录多个主题、项目和学习科目，每项任务独立留下过程与成果。"
@@ -64,8 +72,8 @@ export function TodayPage() {
         <label className="date-control"><Calendar /><input type="date" value={selected} onChange={event => setParams({ date: event.target.value })} /></label>
         <Button onClick={openNewTask}><Plus />新增任务</Button>
       </>}
-    />
-    <section className="day-overview grid-flow-dense">
+    /></div>
+    <section className="day-overview grid-flow-dense today-reveal">
       <div className="day-overview__main">
         <span>当天完成进度</span>
         <strong>{stats.done} / {stats.taskCount} 项任务</strong>
@@ -79,14 +87,14 @@ export function TodayPage() {
       <Metric icon={<Flame />} value={`${longestStreak(dailyRecords)}`} unit="天" label="最长连续" />
     </section>
     {makeup && <div className="makeup-note">你正在查看过去日期的学习记录。完成打卡会明确标记为补签记录。</div>}
-    <section className="section-block">
+    <section className="section-block today-reveal">
       <div className="section-heading"><div><span className="eyebrow">当日任务</span><h2>专注于下一件重要的事</h2></div><span>{stats.taskCount} 项有效任务</span></div>
       {dateTasks.length
         ? <TaskList tasks={dateTasks} reorder />
         : <EmptyState title="这一天还没有任务" description="添加一项清晰、可完成的学习目标，统计会实时更新。" action={<Button onClick={openNewTask}><Plus />添加任务</Button>} />}
     </section>
-    <DailyReviewEditor date={selected} record={record} />
-    <section className={`checkin-panel ${record?.checkedIn ? 'is-checked' : ''}`}>
+    <div className="today-reveal"><DailyReviewEditor date={selected} record={record} /></div>
+    <section className={`checkin-panel today-reveal ${record?.checkedIn ? 'is-checked' : ''}`}>
       <div><span className="eyebrow">正式打卡</span><h2>{record?.checkedIn ? '这一天已计入连续打卡' : '完成复盘，为今天收尾'}</h2><p>只有明确完成正式打卡，这一天才会进入连续记录。</p></div>
       <Button variant={record?.checkedIn ? 'secondary' : 'primary'} onClick={() => record?.checkedIn ? setConfirmCancel(true) : toggle()}>{record?.checkedIn ? '取消今日打卡' : '完成今日打卡'}</Button>
     </section>
