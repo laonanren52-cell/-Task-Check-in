@@ -1,0 +1,68 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "夏序 SummerFlow",
+  "version": "0.1.0",
+  "identifier": "com.summerflow.studytracker",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://127.0.0.1:4173",
+    "beforeDevCommand": "npm run dev -- --host 127.0.0.1 --port 4173 --strictPort",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "夏序 SummerFlow",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 1024,
+        "minHeight": 680,
+        "center": true,
+        "resizable": true,
+        "maximizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self' ipc: http://ipc.localhost; connect-src 'self' ipc: http://ipc.localhost https://github.com https://objects.githubusercontent.com; img-src 'self' asset: http://asset.localhost data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "createUpdaterArtifacts": true,
+    "publisher": "SummerFlow Contributors",
+    "category": "Education",
+    "shortDescription": "Local First 个人学习任务与每日打卡系统",
+    "longDescription": "夏序 SummerFlow 是面向学生的个人学习管理、每日复盘与正式打卡桌面软件。",
+    "copyright": "Copyright © 2026 SummerFlow Contributors",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "installMode": "currentUser",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": false,
+        "startMenuFolder": "SummerFlow"
+      },
+      "wix": { "language": "zh-CN" }
+    }
+  },
+  "plugins": {
+    "updater": {
+      "endpoints": [
+        "https://github.com/laonanren52-cell/-Task-Check-in/releases/latest/download/latest.json"
+      ],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQyMTA3OTRERDRBMUM1NDcKUldSSHhhSFVUWGtRUWdzQXR2YTEzRGthUitPUW03dHRtWUQ5OWptUWRiaUw0WGp5enpPWS9qZGEK",
+      "windows": { "installMode": "passive" }
+    }
+  }
+}

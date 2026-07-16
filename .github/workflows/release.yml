@@ -1,0 +1,82 @@
+name: Release SummerFlow Desktop
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  windows-x64:
+    name: Windows x64 installers and updater
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Validate release configuration
+        run: node scripts/release-check.mjs
+
+      - name: Run automated tests
+        run: npm run test
+
+      - name: Type-check and build Web/PWA
+        run: npm run build
+
+      - name: Build, sign and publish Tauri bundles
+        id: tauri
+        uses: tauri-apps/tauri-action@v0.6.2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: '夏序 SummerFlow ${{ github.ref_name }}'
+          releaseBody: '请查看 CHANGELOG.md 与本 Release 中的安装说明。Windows 安装包尚未接入 Authenticode 代码签名，可能出现 SmartScreen 提示。'
+          releaseDraft: false
+          prerelease: false
+          args: --target x86_64-pc-windows-msvc
+          updaterJsonPreferNsis: true
+          uploadUpdaterJson: true
+          uploadUpdaterSignatures: true
+          uploadWorkflowArtifacts: true
+
+      - name: Enrich updater policy metadata
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          New-Item -ItemType Directory -Force updater-metadata | Out-Null
+          gh release download "$env:GITHUB_REF_NAME" --pattern latest.json --dir updater-metadata
+          node scripts/enrich-updater-json.mjs updater-metadata/latest.json updater-metadata/latest.json
+          gh release upload "$env:GITHUB_REF_NAME" updater-metadata/latest.json --clobber
+
+      - name: Summarize generated artifacts
+        shell: pwsh
+        run: |
+          "## SummerFlow $env:GITHUB_REF_NAME" >> $env:GITHUB_STEP_SUMMARY
+          "Tauri artifacts: ${{ steps.tauri.outputs.artifactPaths }}" >> $env:GITHUB_STEP_SUMMARY
+          "Updater metadata and signatures were uploaded to the GitHub Release." >> $env:GITHUB_STEP_SUMMARY

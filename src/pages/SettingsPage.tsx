@@ -1,0 +1,13 @@
+import { Save } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { PageHeader } from '../components/layout/PageHeader'
+import { Button } from '../components/ui/Button'
+import { useToast } from '../components/ui/Toast'
+import { BackupManager } from '../features/backup/BackupManager'
+import { CategoryManager } from '../features/settings/CategoryManager'
+import { TemplateManager } from '../features/settings/TemplateManager'
+import { validateGoalRange } from '../features/settings/validation'
+import { useAppStore } from '../stores/appStore'
+import { UpdateCenter } from '../desktop/updater/UpdateCenter'
+import { DiagnosticsPanel } from '../desktop/platform/DiagnosticsPanel'
+export function SettingsPage(){const{settings,saveSettings}=useAppStore();const[value,setValue]=useState(settings);const[error,setError]=useState('');const toast=useToast();useEffect(()=>setValue(settings),[settings]);const save=async()=>{const issue=validateGoalRange(value.startDate,value.endDate,value.goalDays);if(issue)return setError(issue);setError('');await saveSettings({...value,updatedAt:new Date().toISOString()});toast('暑期目标已保存')};return <div className="page"><PageHeader eyebrow="自定义设置" title="让系统贴合你的学习方式。" description="维护暑期目标、主题、科目、模板、软件更新和当前设备中的本地数据。"/><UpdateCenter/><section className="settings-section goals"><header><div><h2>暑期目标</h2><p>目标用于看板进度，不会自动创建虚假任务或学习记录。</p></div></header><div className="goals-grid"><label><span>开始日期</span><input type="date" value={value.startDate} onChange={e=>setValue({...value,startDate:e.target.value})}/></label><label><span>结束日期</span><input type="date" value={value.endDate} onChange={e=>setValue({...value,endDate:e.target.value})}/></label><label><span>目标打卡天数</span><input type="number" value={value.goalDays} onChange={e=>setValue({...value,goalDays:Number(e.target.value)})}/></label><label><span>目标学习时长（小时）</span><input type="number" value={value.goalStudyHours} onChange={e=>setValue({...value,goalStudyHours:Number(e.target.value)})}/></label><label><span>目标完成任务数</span><input type="number" value={value.goalTaskCount} onChange={e=>setValue({...value,goalTaskCount:Number(e.target.value)})}/></label><label><span>每日目标（分钟）</span><input type="number" value={value.dailyGoalMinutes} onChange={e=>setValue({...value,dailyGoalMinutes:Number(e.target.value)})}/></label><label><span>每周目标（分钟）</span><input type="number" value={value.weeklyGoalMinutes} onChange={e=>setValue({...value,weeklyGoalMinutes:Number(e.target.value)})}/></label></div>{error&&<p className="form-error">{error}</p>}<Button onClick={save}><Save/>保存目标</Button></section><div className="settings-columns"><CategoryManager kind="theme"/><CategoryManager kind="subject"/></div><TemplateManager/><BackupManager/><DiagnosticsPanel/></div>}

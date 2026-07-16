@@ -1,4 +1,3 @@
-import Dexie,{type Table} from 'dexie'; import type {Category,Checkin,Task,Template} from './types';
-class SummerDB extends Dexie { tasks!:Table<Task,string>; themes!:Table<Category,string>; subjects!:Table<Category,string>; templates!:Table<Template,string>; checkins!:Table<Checkin,string>; constructor(){super('summerflow');this.version(1).stores({tasks:'id,date,status,themeId,subjectId,updatedAt',themes:'id,order',subjects:'id,order',templates:'id',checkins:'id,date'})} }
-export const db=new SummerDB(); export const id=()=>crypto.randomUUID();
-export async function seed(){ if(await db.themes.count())return; const now=new Date().toISOString(); await db.transaction('rw',db.themes,db.subjects,db.templates,async()=>{await db.themes.bulkAdd([{id:id(),name:'暑期主线学习',color:'#2f80ed',icon:'Sparkles',order:0,createdAt:now},{id:id(),name:'个人项目',color:'#34a78a',icon:'Folder',order:1,createdAt:now}]);const subjects=[{id:id(),name:'STM32',color:'#5674d9',icon:'Cpu',order:0,createdAt:now},{id:id(),name:'Python',color:'#e3983d',icon:'Code2',order:1,createdAt:now}];await db.subjects.bulkAdd(subjects);await db.templates.bulkAdd([{id:id(),name:'完成 STM32 串口实验',detail:'记录实验步骤和关键收获',plannedDuration:90,subjectId:subjects[0].id,createdAt:now},{id:id(),name:'推进项目功能开发',detail:'完成一个可验证的功能切片',plannedDuration:120,createdAt:now}])}) }
+export { db, SummerFlowDatabase } from './db/database'
+export { seedDatabase as seed } from './db/seed'
+export { createId as id } from './lib/id'

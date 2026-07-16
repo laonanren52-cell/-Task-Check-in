@@ -1,0 +1,99 @@
+import { format, isBefore, parseISO } from 'date-fns'
+import { Award, Calendar, CheckCircle2, Clock3, Flame, Plus, Target } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { useOutletContext, useSearchParams } from 'react-router-dom'
+import { PageHeader } from '../components/layout/PageHeader'
+import { Button } from '../components/ui/Button'
+import { Dialog } from '../components/ui/Dialog'
+import { EmptyState } from '../components/ui/States'
+import { useToast } from '../components/ui/Toast'
+import { DailyReviewEditor } from '../features/checkins/DailyReviewEditor'
+import { dailyStats, longestStreak, totalPoints } from '../features/statistics'
+import { TaskList } from '../features/tasks/TaskList'
+import { defaultSelectedDate, isoToday } from '../lib/date'
+import { useAppStore } from '../stores/appStore'
+
+export function TodayPage() {
+  const { settings, tasks, dailyRecords, saveDailyRecord } = useAppStore()
+  const [params, setParams] = useSearchParams()
+  const selected = params.get('date') ?? defaultSelectedDate(settings.startDate, settings.endDate)
+  const dateTasks = useMemo(
+    () => tasks.filter(task => task.date === selected).sort((a, b) => a.order - b.order),
+    [tasks, selected],
+  )
+  const stats = dailyStats(dateTasks)
+  const record = dailyRecords.find(item => item.date === selected)
+  const [confirmCancel, setConfirmCancel] = useState(false)
+  const toast = useToast()
+  const { openNewTask } = useOutletContext<{ openNewTask: () => void }>()
+  const makeup = isBefore(parseISO(selected), parseISO(isoToday()))
+  const checkedDays = dailyRecords.filter(item => item.checkedIn).length
+  const cumulativeMinutes = tasks.reduce((sum, task) => sum + task.actualDuration, 0)
+  const completedTasks = tasks.filter(task => task.status === 'done').length
+
+  const toggle = async () => {
+    const now = new Date().toISOString()
+    await saveDailyRecord(record ? {
+      ...record,
+      checkedIn: !record.checkedIn,
+      checkinTime: !record.checkedIn ? now : undefined,
+      isMakeup: !record.checkedIn && makeup,
+      updatedAt: now,
+    } : {
+      date: selected,
+      checkedIn: true,
+      checkinTime: now,
+      isMakeup: makeup,
+      review: '',
+      nextStep: '',
+      achievement: '',
+      problem: '',
+      satisfaction: '',
+      createdAt: now,
+      updatedAt: now,
+    })
+    toast(record?.checkedIn ? '已取消正式打卡' : makeup ? '补签记录已完成' : '今日打卡完成')
+  }
+
+  return <div className="page">
+    <PageHeader
+      eyebrow={format(parseISO(selected), 'yyyy 年 M 月 d 日 · EEEE')}
+      title="今天的学习，有序推进。"
+      description="同一天可以记录多个主题、项目和学习科目，每项任务独立留下过程与成果。"
+      actions={<>
+        <label className="date-control"><Calendar /><input type="date" value={selected} onChange={event => setParams({ date: event.target.value })} /></label>
+        <Button onClick={openNewTask}><Plus />新增任务</Button>
+      </>}
+    />
+    <section className="day-overview grid-flow-dense">
+      <div className="day-overview__main">
+        <span>当天完成进度</span>
+        <strong>{stats.done} / {stats.taskCount} 项任务</strong>
+        <div className="progress"><i style={{ width: `${Math.round(stats.rate * 100)}%` }} /></div>
+        <p>{Math.round(stats.rate * 100)}% 完成率 · 计划 {stats.planned} 分钟 · 实际 {stats.actual} 分钟 · 专注 {stats.focus || 0}</p>
+      </div>
+      <Metric icon={<Calendar />} value={`${checkedDays}`} unit="天" label="累计打卡" />
+      <Metric icon={<Clock3 />} value={`${Math.round(cumulativeMinutes / 60 * 10) / 10}`} unit="小时" label="累计学习" />
+      <Metric icon={<CheckCircle2 />} value={`${completedTasks}`} unit="项" label="累计完成" />
+      <Metric icon={<Award />} value={`${totalPoints(tasks)}`} unit="分" label="累计积分" />
+      <Metric icon={<Flame />} value={`${longestStreak(dailyRecords)}`} unit="天" label="最长连续" />
+    </section>
+    {makeup && <div className="makeup-note">你正在查看过去日期的学习记录。完成打卡会明确标记为补签记录。</div>}
+    <section className="section-block">
+      <div className="section-heading"><div><span className="eyebrow">当日任务</span><h2>专注于下一件重要的事</h2></div><span>{stats.taskCount} 项有效任务</span></div>
+      {dateTasks.length
+        ? <TaskList tasks={dateTasks} reorder />
+        : <EmptyState title="这一天还没有任务" description="添加一项清晰、可完成的学习目标，统计会实时更新。" action={<Button onClick={openNewTask}><Plus />添加任务</Button>} />}
+    </section>
+    <DailyReviewEditor date={selected} record={record} />
+    <section className={`checkin-panel ${record?.checkedIn ? 'is-checked' : ''}`}>
+      <div><span className="eyebrow">正式打卡</span><h2>{record?.checkedIn ? '这一天已计入连续打卡' : '完成复盘，为今天收尾'}</h2><p>只有明确完成正式打卡，这一天才会进入连续记录。</p></div>
+      <Button variant={record?.checkedIn ? 'secondary' : 'primary'} onClick={() => record?.checkedIn ? setConfirmCancel(true) : toggle()}>{record?.checkedIn ? '取消今日打卡' : '完成今日打卡'}</Button>
+    </section>
+    <Dialog open={confirmCancel} title="取消这一天的正式打卡？" description="取消后，这一天不再计入连续打卡；任务和复盘内容会保留。" confirmLabel="取消打卡" danger onClose={() => setConfirmCancel(false)} onConfirm={async () => { await toggle(); setConfirmCancel(false) }} />
+  </div>
+}
+
+function Metric({ icon, value, unit, label }: { icon: React.ReactNode; value: string; unit: string; label: string }) {
+  return <div className="overview-metric"><span>{icon}{label}</span><strong>{value}<small>{unit}</small></strong></div>
+}

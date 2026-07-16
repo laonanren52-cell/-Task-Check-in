@@ -1,0 +1,3 @@
+import { z } from 'zod'
+export const taskFormSchema=z.object({date:z.string().min(1,'请选择日期'),themeId:z.string().min(1,'请选择主题'),subjectId:z.string().min(1,'请选择科目'),templateId:z.string().optional(),name:z.string().trim().min(1,'请输入任务名称').max(100),detail:z.string().max(1000),priority:z.enum(['P1','P2','P3']),status:z.enum(['todo','doing','done','missed','cancelled']),plannedDuration:z.number().min(0).max(1440),actualDuration:z.number().min(0).max(1440),focusScore:z.number().min(0).max(5).optional(),energyScore:z.number().min(0).max(5).optional(),output:z.string().max(2000),note:z.string().max(2000)})
+export type TaskFormValues=z.infer<typeof taskFormSchema>

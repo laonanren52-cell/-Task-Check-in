@@ -5,5 +5,15 @@ work/
 .agents/
 .codex/
 outputs/
+.playwright-cli/
+output/
 *.tsbuildinfo
 .DS_Store
+*.key
+*.key.pub
+*.password
+.tauri/
+.tools/
+summerflow-dev.*.log
+SummerFlow-Backup-*.json
+SummerFlow-Diagnostics-*.json

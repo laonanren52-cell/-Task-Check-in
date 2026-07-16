@@ -1,0 +1,6 @@
+import { Download } from 'lucide-react'
+import { Button } from './Button'
+import { Dialog } from './Dialog'
+import { useAppStore } from '../../stores/appStore'
+import { useToast } from './Toast'
+export function LegacyMigrationDialog(){const{pendingLegacy,legacyPreview,migrateLegacy,dismissLegacy}=useAppStore();const toast=useToast();const exportRaw=()=>{if(!pendingLegacy)return;const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([pendingLegacy],{type:'application/json'}));a.download='summer-growth-v3-original.json';a.click();URL.revokeObjectURL(a.href)};return <Dialog open={!!pendingLegacy} title="发现旧版学习打卡数据" description="确认后会将旧版 localStorage 数据转换到 IndexedDB；原始数据不会被删除。" confirmLabel="开始迁移" onClose={dismissLegacy} onConfirm={async()=>{try{await migrateLegacy()}catch(error){toast(`迁移失败：${error instanceof Error?error.message:'未知错误'}`,'error')}}}>{legacyPreview&&<><div className="import-summary"><span><b>{legacyPreview.tasks}</b>任务</span><span><b>{legacyPreview.checkins}</b>打卡</span><span><b>{legacyPreview.themes}</b>主题</span><span><b>{legacyPreview.subjects}</b>科目</span><span><b>{legacyPreview.templates}</b>模板</span></div><Button variant="ghost" onClick={exportRaw}><Download/>导出旧版原始数据</Button></>}</Dialog>}

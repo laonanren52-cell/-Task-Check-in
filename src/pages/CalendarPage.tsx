@@ -1,0 +1,7 @@
+import { addMonths, format, subMonths } from 'date-fns'
+import { ChevronLeft, ChevronRight, Grid3X3, LayoutGrid } from 'lucide-react'
+import { useState } from 'react'
+import { PageHeader } from '../components/layout/PageHeader'
+import { CalendarView } from '../features/calendar/CalendarView'
+import { useAppStore } from '../stores/appStore'
+export function CalendarPage(){const[todayMonth,setMonth]=useState(new Date());const[mode,setMode]=useState<'calendar'|'heatmap'>('calendar');const{tasks,dailyRecords}=useAppStore();return <div className="page"><PageHeader eyebrow="打卡月历" title="看见每一天的节奏。" description="绿色表示正式打卡，黄色表示有任务待收尾，红色表示完成率较低。"/><section className="calendar-panel"><header><button className="icon-button" onClick={()=>setMonth(subMonths(todayMonth,1))} aria-label="上个月"><ChevronLeft/></button><h2>{format(todayMonth,'yyyy 年 M 月')}</h2><button className="icon-button" onClick={()=>setMonth(addMonths(todayMonth,1))} aria-label="下个月"><ChevronRight/></button><div className="view-switch"><button className={mode==='calendar'?'active':''} onClick={()=>setMode('calendar')}><LayoutGrid/>标准月历</button><button className={mode==='heatmap'?'active':''} onClick={()=>setMode('heatmap')}><Grid3X3/>热力图</button></div></header><CalendarView month={todayMonth} tasks={tasks} records={dailyRecords} mode={mode}/><footer><span><i className="dot checked"/>已打卡</span><span><i className="dot pending"/>待打卡</span><span><i className="dot poor"/>低完成率</span><span><i className="dot blank"/>无任务</span></footer></section></div>}
