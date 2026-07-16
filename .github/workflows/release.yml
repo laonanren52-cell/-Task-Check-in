@@ -62,26 +62,60 @@ jobs:
           includeUpdaterJson: true
           updaterJsonPreferNsis: true
 
-      - name: Enrich updater policy metadata
+      - name: Generate updater metadata from signed NSIS artifact
         shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           New-Item -ItemType Directory -Force updater-metadata | Out-Null
-          gh release download "$env:GITHUB_REF_NAME" --pattern latest.json --dir updater-metadata
+          $release = gh release view "$env:GITHUB_REF_NAME" --json assets | ConvertFrom-Json
+          $nsis = @($release.assets | Where-Object { $_.name -match '_x64-setup\.exe$' }) | Select-Object -First 1
+          $signature = @($release.assets | Where-Object { $_.name -match '_x64-setup\.exe\.sig$' }) | Select-Object -First 1
+
+          if (-not $nsis -or -not $signature) {
+            Write-Host '::error title=Missing signed NSIS updater assets::The Release must contain an NSIS setup.exe and its matching .sig before latest.json can be generated.'
+            $release.assets | ForEach-Object { "{0}`t{1} bytes`t{2}" -f $_.name, $_.size, $_.url }
+            throw 'Missing signed NSIS updater assets.'
+          }
+
+          gh release download "$env:GITHUB_REF_NAME" --pattern $signature.name --dir updater-metadata
+          $signaturePath = Join-Path 'updater-metadata' $signature.name
+          if (-not (Test-Path -LiteralPath $signaturePath -PathType Leaf)) {
+            throw "The updater signature was listed on the Release but could not be downloaded: $($signature.name)"
+          }
+
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $latest = @{
+            version = $version
+            notes = 'See CHANGELOG.md for this release.'
+            pub_date = [DateTime]::UtcNow.ToString('o')
+            platforms = @{
+              'windows-x86_64' = @{
+                signature = (Get-Content -Raw $signaturePath).Trim()
+                url = $nsis.url
+              }
+            }
+          }
+          $latest | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath updater-metadata/latest.json -Encoding utf8
+
+      - name: Enrich updater policy metadata
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           $metadataPath = 'updater-metadata/latest.json'
           if (-not (Test-Path -LiteralPath $metadataPath -PathType Leaf)) {
-            Write-Host '::error title=Missing updater latest.json::The Tauri action did not upload latest.json to the current Release.'
+            Write-Host '::error title=Missing updater latest.json::The signed NSIS metadata generation step did not create latest.json.'
             Write-Host "Release assets for $env:GITHUB_REF_NAME:"
             gh release view "$env:GITHUB_REF_NAME" --json assets --jq '.assets[] | "\(.name)\t\(.size) bytes\t\(.url)"'
-            Write-Host 'Generated files under src-tauri/target/release/bundle:'
-            if (Test-Path -LiteralPath 'src-tauri/target/release/bundle') {
-              Get-ChildItem -LiteralPath 'src-tauri/target/release/bundle' -Recurse -File |
+            Write-Host 'Generated files under src-tauri/target:'
+            if (Test-Path -LiteralPath 'src-tauri/target') {
+              Get-ChildItem -LiteralPath 'src-tauri/target' -Recurse -File |
                 ForEach-Object { "$($_.FullName) ($($_.Length) bytes)" }
             } else {
-              Write-Host 'src-tauri/target/release/bundle was not generated.'
+              Write-Host 'src-tauri/target was not generated.'
             }
-            throw 'Updater metadata is missing from the current Release. Check the Tauri action output and signing secrets.'
+            throw 'Updater metadata is missing. Check signed NSIS release assets and the metadata generation step.'
           }
           node scripts/enrich-updater-json.mjs updater-metadata/latest.json updater-metadata/latest.json
           gh release upload "$env:GITHUB_REF_NAME" updater-metadata/latest.json --clobber
