@@ -93,11 +93,7 @@ export function TodayPage() {
         ? <TaskList tasks={dateTasks} reorder />
         : <EmptyState title="这一天还没有任务" description="添加一项清晰、可完成的学习目标，统计会实时更新。" action={<Button onClick={openNewTask}><Plus />添加任务</Button>} />}
     </section>
-    <div className="today-reveal"><DailyReviewEditor date={selected} record={record} /></div>
-    <section className={`checkin-panel today-reveal ${record?.checkedIn ? 'is-checked' : ''}`}>
-      <div><span className="eyebrow">正式打卡</span><h2>{record?.checkedIn ? '这一天已计入连续打卡' : '完成复盘，为今天收尾'}</h2><p>只有明确完成正式打卡，这一天才会进入连续记录。</p></div>
-      <Button variant={record?.checkedIn ? 'secondary' : 'primary'} onClick={() => record?.checkedIn ? setConfirmCancel(true) : toggle()}>{record?.checkedIn ? '取消今日打卡' : '完成今日打卡'}</Button>
-    </section>
+    <div className="today-reveal"><DailyReviewEditor date={selected} record={record} onCheckin={() => record?.checkedIn ? setConfirmCancel(true) : toggle()} /></div>
     <Dialog open={confirmCancel} title="取消这一天的正式打卡？" description="取消后，这一天不再计入连续打卡；任务和复盘内容会保留。" confirmLabel="取消打卡" danger onClose={() => setConfirmCancel(false)} onConfirm={async () => { await toggle(); setConfirmCancel(false) }} />
   </div>
 }

@@ -18,6 +18,7 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
+      devOptions: { enabled: true },
       manifest: {
         name: '夏序 SummerFlow',
         short_name: 'SummerFlow',
