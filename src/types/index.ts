@@ -93,6 +93,54 @@ export interface AppMeta {
   onboardingCompleted: boolean
 }
 
+export type AIProvider = 'openai-compatible' | 'gemini' | 'custom'
+export type AIFeature = 'planner' | 'breakdown' | 'review' | 'copilot' | 'organize-review'
+
+/** Non-secret model metadata. API keys are deliberately kept out of IndexedDB. */
+export interface AIConfig {
+  id: string
+  displayName: string
+  provider: AIProvider
+  baseUrl: string
+  model: string
+  enabled: boolean
+  isDefault: boolean
+  apiKeyHint?: string
+  temperature?: number
+  maxTokens?: number
+  timeout?: number
+  streamEnabled?: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AIPermissions {
+  tasks: boolean
+  durations: boolean
+  focus: boolean
+  reviews: boolean
+  goals: boolean
+  recentHistory: boolean
+}
+
+export interface AIPreferences {
+  id: 'preferences'
+  permissions: AIPermissions
+  consentedAt?: string
+  updatedAt: string
+}
+
+export interface AIUsageLog {
+  id: string
+  feature: AIFeature
+  configId?: string
+  createdAt: string
+  success: boolean
+  latencyMs?: number
+  tokenUsage?: number
+  errorCode?: string
+}
+
 export interface BackupData {
   schemaVersion: number
   exportedAt: string
@@ -102,4 +150,6 @@ export interface BackupData {
   templates: TaskTemplate[]
   tasks: Task[]
   dailyRecords: DailyRecord[]
+  aiConfigs?: Array<Omit<AIConfig, 'apiKeyHint'> & { apiKey: null }>
+  aiPreferences?: AIPreferences
 }

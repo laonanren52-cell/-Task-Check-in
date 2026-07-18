@@ -4,6 +4,7 @@ import { Button } from '../../components/ui/Button'
 import { useToast } from '../../components/ui/Toast'
 import { useAppStore } from '../../stores/appStore'
 import type { DailyRecord } from '../../types'
+import { AIDailyReviewTools } from '../ai/components/AIDailyReviewTools'
 
 const moods = [
   { score: 1, label: '很差' }, { score: 2, label: '偏低' }, { score: 3, label: '平稳' }, { score: 4, label: '不错' }, { score: 5, label: '很好' },
@@ -37,6 +38,7 @@ export function DailyReviewEditor({ date, record, onCheckin }: { date: string; r
       <label><span>明日第一步</span><small>写一个打开系统后就能开始的小动作。</small><textarea placeholder="例如：先画出 DCDC 反馈电阻的计算草图。" value={value.nextStep} onChange={event => setValue({ ...value, nextStep: event.target.value })} /></label>
       <div className="review-editor__actions wide"><div><span>先保存，再打卡</span><small>打卡后仍可以修改任务和复盘内容。</small></div><div><Button variant="secondary" onClick={submit}><Save />保存草稿</Button><Button onClick={onCheckin}><CheckCircle2 />{record?.checkedIn ? '取消今日打卡' : '完成今日打卡'}</Button></div></div>
     </div>
+    <AIDailyReviewTools date={date} value={value} onApply={draft=>setValue(current=>({...current,...draft}))}/>
   </section>
 }
 

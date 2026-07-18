@@ -10,6 +10,7 @@
     "os:default",
     "process:allow-restart",
     "updater:default",
+    "stronghold:default",
     "opener:default",
     "fs:default",
     "fs:allow-read-text-file",

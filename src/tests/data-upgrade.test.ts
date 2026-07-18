@@ -27,7 +27,7 @@ describe('桌面版本与 IndexedDB 数据升级', () => {
   it('0.1.1 → 0.2.0 升级迁移版本且不改变设置', () => {
     const settings = migrateSettingsV2ToV3(legacySettings())
     const result = migrateReleaseData({ settings, meta: { ...defaultMeta(), schemaVersion: 2 } }, '0.1.1', '0.2.0')
-    expect(result.meta.schemaVersion).toBe(3)
+    expect(result.meta.schemaVersion).toBe(4)
     expect(result.settings).toEqual(settings)
   })
   it('拒绝降级或非语义版本范围', () => {
@@ -49,7 +49,7 @@ describe('桌面版本与 IndexedDB 数据升级', () => {
     await current.open()
     expect((await current.tasks.get(task.id))?.name).toBe('升级前任务')
     expect((await current.settings.get('app'))?.autoCheckUpdates).toBe(true)
-    expect((await current.appMeta.get('meta'))?.schemaVersion).toBe(3)
+    expect((await current.appMeta.get('meta'))?.schemaVersion).toBe(4)
     current.close()
   })
   it('桌面备份文件名包含可排序时间戳', () => {

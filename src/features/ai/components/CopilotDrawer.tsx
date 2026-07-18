@@ -1,0 +1,9 @@
+import { Send, Sparkles, X } from 'lucide-react'
+import { useState } from 'react'
+import { Button } from '../../../components/ui/Button'
+import { useToast } from '../../../components/ui/Toast'
+import { isoToday } from '../../../lib/date'
+import { copilotPrompt } from '../prompts/prompts'
+import { currentAIContext, generateAI } from '../services/aiService'
+
+export function CopilotDrawer({onClose}:{onClose:()=>void}){const[question,setQuestion]=useState('');const[answer,setAnswer]=useState('');const[working,setWorking]=useState(false);const toast=useToast();const ask=async()=>{if(!question.trim())return;setWorking(true);try{setAnswer(await generateAI('copilot',copilotPrompt(question,currentAIContext(isoToday())),isoToday()))}catch(error){toast(error instanceof Error?error.message:'提问失败。','error')}finally{setWorking(false)}};return <div className="ai-drawer-backdrop ai-copilot-backdrop" onMouseDown={event=>{if(event.target===event.currentTarget)onClose()}}><aside className="ai-drawer ai-copilot" role="dialog"><header><div><span className="eyebrow">SummerFlow Copilot</span><h2>从记录里找下一步。</h2><p>只在你提问时读取已授权的数据，并且不会直接修改任务。</p></div><button className="icon-button" onClick={onClose}><X/></button></header><div className="ai-drawer__body"><div className="ai-copilot-prompts">{['我明天应该学什么？','最近为什么总学不完？','哪些 P1 一直没完成？'].map(text=><button key={text} onClick={()=>setQuestion(text)}>{text}</button>)}</div>{answer&&<article className="ai-copilot-answer">{answer}</article>}<label>想问什么？<textarea value={question} onChange={event=>setQuestion(event.target.value)} onKeyDown={event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();void ask()}}} placeholder="例如：帮我规划未来 3 天的学习重点。"/></label></div><footer><small>Ctrl / Cmd + Enter 发送</small><Button disabled={working||!question.trim()} onClick={ask}><Send/>{working?'正在思考…':'发送'}</Button></footer></aside></div>}

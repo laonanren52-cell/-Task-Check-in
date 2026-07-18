@@ -1,5 +1,5 @@
 import { format, isBefore, parseISO } from 'date-fns'
-import { Award, Calendar, CheckCircle2, Clock3, Flame, Plus } from 'lucide-react'
+import { Award, Calendar, CheckCircle2, Clock3, Flame, Plus, Sparkles } from 'lucide-react'
 import { useMemo, useRef, useState } from 'react'
 import { useOutletContext, useSearchParams } from 'react-router-dom'
 import gsap from 'gsap'
@@ -12,6 +12,7 @@ import { useToast } from '../components/ui/Toast'
 import { DailyReviewEditor } from '../features/checkins/DailyReviewEditor'
 import { dailyStats, longestStreak, totalPoints } from '../features/statistics'
 import { TaskList } from '../features/tasks/TaskList'
+import { AIPlannerDrawer } from '../features/ai/components/AIPlannerDrawer'
 import { defaultSelectedDate, isoToday } from '../lib/date'
 import { useAppStore } from '../stores/appStore'
 
@@ -26,6 +27,7 @@ export function TodayPage() {
   const stats = dailyStats(dateTasks)
   const record = dailyRecords.find(item => item.date === selected)
   const [confirmCancel, setConfirmCancel] = useState(false)
+  const [planning, setPlanning] = useState(false)
   const toast = useToast()
   const { openNewTask } = useOutletContext<{ openNewTask: () => void }>()
   const makeup = isBefore(parseISO(selected), parseISO(isoToday()))
@@ -70,6 +72,7 @@ export function TodayPage() {
       description="同一天可以记录多个主题、项目和学习科目，每项任务独立留下过程与成果。"
       actions={<>
         <label className="date-control"><Calendar /><input type="date" value={selected} onChange={event => setParams({ date: event.target.value })} /></label>
+        <Button variant="secondary" onClick={() => setPlanning(true)}><Sparkles />AI 安排</Button>
         <Button onClick={openNewTask}><Plus />新增任务</Button>
       </>}
     /></div>
@@ -95,6 +98,7 @@ export function TodayPage() {
     </section>
     <div className="today-reveal"><DailyReviewEditor date={selected} record={record} onCheckin={() => record?.checkedIn ? setConfirmCancel(true) : toggle()} /></div>
     <Dialog open={confirmCancel} title="取消这一天的正式打卡？" description="取消后，这一天不再计入连续打卡；任务和复盘内容会保留。" confirmLabel="取消打卡" danger onClose={() => setConfirmCancel(false)} onConfirm={async () => { await toggle(); setConfirmCancel(false) }} />
+    {planning && <AIPlannerDrawer date={selected} onClose={() => setPlanning(false)} />}
   </div>
 }
 

@@ -1,7 +1,7 @@
 import semver from 'semver'
 import type { AppMeta, AppSettings } from '../types'
 
-export const DB_SCHEMA_VERSION = 3
+export const DB_SCHEMA_VERSION = 4
 export const DATA_MIGRATION_VERSION = '0.2.0'
 
 export type LegacySettings = Omit<AppSettings, 'autoCheckUpdates' | 'updateChannel'> & Partial<Pick<AppSettings, 'autoCheckUpdates' | 'updateChannel'>>

@@ -2,6 +2,20 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.0] - 2026-07-18
+
+### Added
+
+- 新增 SummerFlow AI 学习教练：AI 安排今日任务、AI 拆解任务、AI 每日复盘分析、AI 整理复盘草稿与右下角 Copilot。
+- 新增多模型配置、默认模型、OpenAI Compatible、Gemini 与自定义兼容接口；模型名称和 Base URL 均可自由填写。
+- 新增 AI 数据权限控制、结构化 Zod 响应校验、请求超时和取消，以及轻量调用统计。
+- 新增 Dexie v4 迁移：`aiConfigs`、`aiPreferences`、`aiUsageLogs`，不影响既有任务、打卡、主题、科目、模板或设置数据。
+
+### Security
+
+- 桌面端 API Key 使用 Tauri Stronghold 加密保存；不写入 IndexedDB、日志或普通 JSON 备份。
+- Web/PWA 模式明确提示密钥仅保存在当前浏览器设备；普通 JSON 备份会移除 API Key。
+
 ## [0.1.4] - 2026-07-18
 
 ### Fixed

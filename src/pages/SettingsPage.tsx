@@ -1,4 +1,4 @@
-import { ArchiveRestore, BookOpen, CircleHelp, FolderKanban, Goal, LayoutTemplate, RefreshCw, Save, SlidersHorizontal } from 'lucide-react'
+import { ArchiveRestore, BookOpen, Bot, CircleHelp, FolderKanban, Goal, LayoutTemplate, RefreshCw, Save, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { PageHeader } from '../components/layout/PageHeader'
 import { Button } from '../components/ui/Button'
@@ -10,12 +10,14 @@ import { validateGoalRange } from '../features/settings/validation'
 import { useAppStore } from '../stores/appStore'
 import { DiagnosticsPanel } from '../desktop/platform/DiagnosticsPanel'
 import { UpdateCenter } from '../desktop/updater/UpdateCenter'
+import { AIModelSettings } from '../features/ai/components/AIModelSettings'
 
-type SettingsSection = 'updates' | 'goals' | 'themes' | 'subjects' | 'templates' | 'data' | 'about'
+type SettingsSection = 'updates' | 'goals' | 'ai' | 'themes' | 'subjects' | 'templates' | 'data' | 'about'
 
 const sections: Array<{ id: SettingsSection; label: string; detail: string; icon: typeof RefreshCw }> = [
   { id: 'updates', label: '软件更新', detail: '版本与自动更新', icon: RefreshCw },
   { id: 'goals', label: '暑期目标', detail: '给学习一个方向', icon: Goal },
+  { id: 'ai', label: 'AI 模型', detail: '连接与切换你的模型', icon: Bot },
   { id: 'themes', label: '主题 / 项目', detail: '整理学习主线', icon: FolderKanban },
   { id: 'subjects', label: '学习科目', detail: '维护科目选项', icon: BookOpen },
   { id: 'templates', label: '任务模板', detail: '快速创建任务', icon: LayoutTemplate },
@@ -68,6 +70,7 @@ export function SettingsPage() {
           {error && <p className="form-error">{error}</p>}
           <Button onClick={save}><Save />保存目标</Button>
         </SettingsPanel>}
+        {section === 'ai' && <SettingsPanel title="AI 模型" description="连接你自己的 AI 服务；SummerFlow 不绑定固定模型，你可以按任务自由切换。"><AIModelSettings /></SettingsPanel>}
         {section === 'themes' && <SettingsPanel title="主题 / 项目" description="这是任务的学习主线。拖动条目可以调整新增任务时的显示顺序。"><CategoryManager kind="theme" /></SettingsPanel>}
         {section === 'subjects' && <SettingsPanel title="学习科目" description="科目用于观察投入分布，也会作为任务表单中的可选项。"><CategoryManager kind="subject" /></SettingsPanel>}
         {section === 'templates' && <SettingsPanel title="任务模板" description="为高频学习动作预设内容；选用后仍然可以继续编辑。"><TemplateManager /></SettingsPanel>}

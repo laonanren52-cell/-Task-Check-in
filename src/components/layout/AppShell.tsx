@@ -1,11 +1,13 @@
 import { motion, useReducedMotion } from 'framer-motion'
-import { BarChart3, CalendarDays, ClipboardList, Database, Plus, Settings, Sun } from 'lucide-react'
+import { BarChart3, CalendarDays, ClipboardList, Database, Plus, Settings, Sparkles, Sun } from 'lucide-react'
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { TaskDrawer } from '../../features/tasks/TaskDrawer'
 import { defaultSelectedDate } from '../../lib/date'
 import { useAppStore } from '../../stores/appStore'
 import { DesktopVersion } from '../../desktop/platform/DesktopVersion'
+import { CopilotDrawer } from '../../features/ai/components/CopilotDrawer'
+import { AIConsentDialog } from '../../features/ai/components/AIConsentDialog'
 
 const items = [
   ['/today', '今日', Sun],
@@ -17,6 +19,7 @@ const items = [
 
 export function AppShell() {
   const [adding, setAdding] = useState(false)
+  const [copilot, setCopilot] = useState(false)
   const settings = useAppStore(state => state.settings)
   const navigate = useNavigate()
   const location = useLocation()
@@ -38,6 +41,9 @@ export function AppShell() {
     </div>
     <nav className="mobile-nav">{items.map(([to, label, Icon]) => <NavLink to={to} key={to}><Icon /><small>{label}</small></NavLink>)}</nav>
     <button className="floating-add" aria-label="新增任务" onClick={() => setAdding(true)}><Plus /></button>
+    <button className="floating-copilot" aria-label="打开 AI 学习助手" onClick={() => setCopilot(true)}><Sparkles /><span>AI</span></button>
     {adding && <TaskDrawer initialDate={initialDate} onClose={() => setAdding(false)} />}
+    {copilot && <CopilotDrawer onClose={() => setCopilot(false)} />}
+    <AIConsentDialog />
   </main>
 }

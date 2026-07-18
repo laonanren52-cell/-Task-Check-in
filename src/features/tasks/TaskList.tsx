@@ -8,6 +8,7 @@ import { useAppStore } from '../../stores/appStore'
 import type { Task, TaskStatus } from '../../types'
 import { PriorityIndicator, statusLabels } from './StatusBadge'
 import { TaskDrawer } from './TaskDrawer'
+import { AITaskBreakdownDrawer } from '../ai/components/AITaskBreakdownDrawer'
 
 const statuses = Object.entries(statusLabels) as [TaskStatus, string][]
 
@@ -15,6 +16,7 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
   const { themes, subjects, saveTask, deleteTasks, reorderTasks } = useAppStore()
   const [editing, setEditing] = useState<Task>()
   const [deleting, setDeleting] = useState<Task>()
+  const [breakingDown, setBreakingDown] = useState<Task>()
   const [activeMenu, setActiveMenu] = useState<string>()
   const [menuPosition, setMenuPosition] = useState<{ top: number; left: number }>()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -67,8 +69,9 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
       </button>
       <div className="task-card__side"><select className={`quick-status badge--${task.status}`} value={task.status} onChange={event => changeStatus(task, event.target.value as TaskStatus)} aria-label={`修改“${task.name}”的状态`}>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button ref={element => { triggers.current[task.id] = element }} className="more-menu__trigger" aria-label="更多操作" aria-expanded={activeMenu === task.id} onClick={() => setActiveMenu(activeMenu === task.id ? undefined : task.id)}><MoreHorizontal /></button></div>
     </article>)}
-    {activeMenu && menuTask && menuPosition && createPortal(<div className="more-menu__panel more-menu__panel--portal" ref={menuRef} role="menu" style={{ top: menuPosition.top, left: menuPosition.left }}><button onClick={() => { setEditing(menuTask); setActiveMenu(undefined) }}><Pencil />编辑</button><button onClick={() => { void copy(menuTask); setActiveMenu(undefined) }}><Copy />复制</button><button className="danger-text" onClick={() => { setDeleting(menuTask); setActiveMenu(undefined) }}><Trash2 />删除</button></div>, document.body)}
+    {activeMenu && menuTask && menuPosition && createPortal(<div className="more-menu__panel more-menu__panel--portal" ref={menuRef} role="menu" style={{ top: menuPosition.top, left: menuPosition.left }}><button onClick={() => { setEditing(menuTask); setActiveMenu(undefined) }}><Pencil />编辑</button><button onClick={() => { setBreakingDown(menuTask); setActiveMenu(undefined) }}><span className="menu-ai-mark">AI</span>AI 拆解任务</button><button onClick={() => { void copy(menuTask); setActiveMenu(undefined) }}><Copy />复制</button><button className="danger-text" onClick={() => { setDeleting(menuTask); setActiveMenu(undefined) }}><Trash2 />删除</button></div>, document.body)}
     {editing && <TaskDrawer task={editing} onClose={() => setEditing(undefined)} />}
+    {breakingDown && <AITaskBreakdownDrawer task={breakingDown} onClose={() => setBreakingDown(undefined)} />}
     <Dialog open={!!deleting} title="删除这项任务？" description="删除后无法恢复，相关统计会立即更新。" confirmLabel="删除任务" danger onClose={() => setDeleting(undefined)} onConfirm={async () => { if (!deleting) return; await deleteTasks([deleting.id]); toast('任务已删除'); setDeleting(undefined) }}><p className="dialog__emphasis">{deleting?.name}</p></Dialog>
   </div>
 }
