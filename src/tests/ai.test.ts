@@ -1,15 +1,16 @@
 import 'fake-indexeddb/auto'
 import Dexie from 'dexie'
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SummerFlowDatabase } from '../db/database'
 import { defaultAIPreferences, defaultMeta, defaultSettings } from '../db/defaults'
 import { buildAIContext } from '../features/ai/services/contextBuilder'
 import { aiDailyInsightSchema, aiTaskBreakdownSchema, aiTaskPlanSchema, parseAIJson } from '../features/ai/schemas/aiResponses'
+import { AIClientError, callAI } from '../features/ai/services/aiClient'
 import { backupSchema } from '../features/backup/schema'
 import type { AIConfig, Task } from '../types'
 
 const names: string[] = []
-afterEach(async()=>{for(const name of names)await Dexie.delete(name);names.length=0})
+afterEach(async()=>{for(const name of names)await Dexie.delete(name);names.length=0;vi.unstubAllGlobals()})
 const task: Task = { id:'task-1',date:'2026-07-18',themeId:'theme',subjectId:'subject',name:'C pointer',detail:'practice',priority:'P1',status:'todo',plannedDuration:60,actualDuration:20,focusScore:4,energyScore:3,output:'',note:'',order:0,createdAt:'2026-07-18',updatedAt:'2026-07-18' }
 
 describe('SummerFlow AI',()=>{
@@ -28,6 +29,20 @@ describe('SummerFlow AI',()=>{
     const response = '{"summary":"进度稳定","facts":["完成 1 项任务",],"inferences":[],"suggestions":[],}'
     expect(parseAIJson(response,aiDailyInsightSchema).facts).toEqual(['完成 1 项任务'])
     expect(()=>parseAIJson('今天做得不错',aiDailyInsightSchema)).toThrow('AI 返回格式异常')
+  })
+  it('falls back when an OpenAI-compatible provider rejects response_format',async()=>{
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error:{ message:'response_format is unsupported' } }),{status:400}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices:[{ finish_reason:'stop', message:{ content:'{"summary":"稳定","facts":[],"inferences":[],"suggestions":[]}' } }], usage:{total_tokens:25} }),{status:200}))
+    vi.stubGlobal('fetch',fetchMock)
+    const result=await callAI({id:'ai',displayName:'Test',provider:'custom',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'test',prompt:'return JSON',jsonMode:'object'})
+    expect(result.text).toContain('summary');expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1].body)).response_format).toEqual({type:'json_object'})
+    expect(JSON.parse(String(fetchMock.mock.calls[1][1].body)).response_format).toBeUndefined()
+  })
+  it('identifies a token-truncated response before JSON parsing',async()=>{
+    vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"summary":"partial"'}}]}),{status:200})))
+    await expect(callAI({id:'ai',displayName:'Test',provider:'openai-compatible',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'test',prompt:'return JSON',jsonMode:'object'})).rejects.toMatchObject({code:'TRUNCATED'} satisfies Partial<AIClientError>)
   })
   it('filters private learning fields from AI context when permissions are off',()=>{
     const context=buildAIContext({tasks:[task],dailyRecords:[],themes:[{id:'theme',name:'Project',color:'#000',icon:'Book',order:0,createdAt:'',updatedAt:''}],subjects:[{id:'subject',name:'C',color:'#000',order:0,createdAt:'',updatedAt:''}],templates:[],settings:defaultSettings(),permissions:{tasks:false,durations:false,focus:false,reviews:false,goals:false,recentHistory:false}},task.date)

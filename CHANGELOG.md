@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.2] - 2026-07-18
+
+### Fixed
+
+- 修复 Windows 桌面端 AI 加密密钥仓库的 vault 与 Argon2 salt 使用不同应用数据目录，导致 `BadFileKey`、保存 AI 配置失败的问题。
+- 为安全密钥加载、读取、写入与保存增加超时保护和明确诊断，避免误报为 AI 返回格式异常或无限加载。
+- 增强 AI Provider 响应诊断、结构化输出降级、截断识别与 JSON/Zod 解析兼容性。
+
 ## [0.2.1] - 2026-07-18
 
 ### Fixed

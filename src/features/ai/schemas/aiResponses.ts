@@ -20,6 +20,18 @@ export type AIReviewDraft = z.infer<typeof aiReviewDraftSchema>
 
 const parseError = () => new Error('AI 返回格式异常，请重新生成。')
 
+type ParserLog = Record<string, unknown>
+const parserDebug = (event: string, details: ParserLog) => {
+  if (import.meta.env.DEV) console.debug(`[SummerFlow AI parser] ${event}`, details)
+  else console.warn(`[SummerFlow AI parser] ${event}`, { ...details, rawContent: undefined, candidate: undefined, parsed: undefined })
+}
+
+export class AIResponseParseError extends Error {
+  constructor(public readonly diagnostics: { reason: 'no-json'|'invalid-json'|'schema'; issues?: z.core.$ZodIssue[] }) {
+    super('AI 返回格式异常，请重新生成。')
+  }
+}
+
 function balancedJsonAt(text: string, start: number): string | undefined {
   const opening = text[start]
   if (opening !== '{' && opening !== '[') return undefined
@@ -77,17 +89,38 @@ function parseCandidate(candidate: string): unknown {
   return typeof parsed === 'string' ? JSON.parse(parsed.trim()) : parsed
 }
 
-export function parseAIJson<T>(text: string, schema: z.ZodType<T>): T {
-  const candidates = jsonCandidates(text)
-  for (const candidate of candidates) {
+export class AIResponseParser {
+  static parse<T>(text: string, schema: z.ZodType<T>, feature = 'structured'): T {
+    const candidates = jsonCandidates(text)
+    let sawJson = false
+    let lastIssues: z.core.$ZodIssue[] | undefined
+    parserDebug('received', { feature, rawContent: text, contentLength: text.length, candidateCount: candidates.length })
+    for (const candidate of candidates) {
     for (const attempt of [candidate, repairJson(candidate)]) {
       try {
-        const result = schema.safeParse(parseCandidate(attempt))
-        if (result.success) return result.data
-      } catch {
-        // Try the next JSON-shaped response before reporting a format error.
+          const parsed = parseCandidate(attempt)
+          sawJson = true
+          const result = schema.safeParse(parsed)
+          if (result.success) {
+            parserDebug('validated', { feature, candidate: attempt, parsed })
+            return result.data
+          }
+          lastIssues = result.error.issues
+          parserDebug('zod-validation-failed', { feature, candidate: attempt, parsed, issues: result.error.issues })
+        } catch (error) {
+          parserDebug('json-parse-failed', { feature, candidate: attempt, error: error instanceof Error ? error.message : 'Unknown parse error' })
+        }
       }
     }
+    parserDebug('failed', { feature, rawContent: text, reason: sawJson ? 'schema' : candidates.length ? 'invalid-json' : 'no-json', issues: lastIssues })
+    throw new AIResponseParseError({ reason: sawJson ? 'schema' : candidates.length ? 'invalid-json' : 'no-json', issues: lastIssues })
   }
-  throw parseError()
+}
+
+export function parseAIJson<T>(text: string, schema: z.ZodType<T>, feature?: string): T {
+  try { return AIResponseParser.parse(text, schema, feature) }
+  catch (error) {
+    if (error instanceof AIResponseParseError) throw error
+    throw parseError()
+  }
 }
