@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.1] - 2026-07-18
+
+### Fixed
+
+- 修复 AI 学习教练对带说明文字、Markdown JSON 代码块和分段文本响应的兼容性，避免已连接模型被误报为“返回格式异常”。
+- 增加一次安全的 JSON 格式修复与结构校验；无法恢复的响应仍会明确提示重新生成。
+- 强化结构化任务、任务拆解和每日复盘提示词，要求模型仅输出完整 JSON。
+
 ## [0.2.0] - 2026-07-18
 
 ### Added

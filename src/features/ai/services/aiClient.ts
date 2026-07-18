@@ -10,6 +10,28 @@ export const aiErrorText = (error: unknown) => error instanceof AIClientError ? 
 function endpoint(config: AIConfig) { const base = config.baseUrl.replace(/\/$/, ''); return /chat\/completions$/.test(base) ? base : `${base}/chat/completions` }
 function mapHttp(status: number) { if (status === 401 || status === 403) return 'INVALID_KEY'; if (status === 404) return 'MODEL_NOT_FOUND'; if (status === 408 || status === 504) return 'TIMEOUT'; if (status === 429) return 'RATE_LIMIT'; if (status === 402) return 'QUOTA_EXCEEDED'; return 'UNKNOWN' as AIClientErrorCode }
 
+type OpenAIContentPart = { text?: string | { value?: string }; content?: string }
+type OpenAIMessage = { content?: string | OpenAIContentPart[]; reasoning_content?: string | OpenAIContentPart[] }
+
+function contentToText(content: string | OpenAIContentPart[] | undefined): string | undefined {
+  if (typeof content === 'string') return content.trim() || undefined
+  if (!Array.isArray(content)) return undefined
+  const text = content.map(part => {
+    if (typeof part.text === 'string') return part.text
+    if (typeof part.text === 'object') return part.text.value ?? ''
+    return part.content ?? ''
+  }).join('').trim()
+  return text || undefined
+}
+
+function openAIResponseText(data: { choices?: Array<{ message?: OpenAIMessage; text?: string }>; output_text?: string }): string | undefined {
+  const choice = data.choices?.[0]
+  return contentToText(choice?.message?.content)
+    ?? contentToText(choice?.message?.reasoning_content)
+    ?? choice?.text?.trim()
+    ?? data.output_text?.trim()
+}
+
 export async function callAI(config: AIConfig, apiKey: string, request: AIRequest): Promise<{ text: string; tokens?: number }> {
   const controller = new AbortController(); const timeout = window.setTimeout(() => controller.abort(), (config.timeout ?? 45) * 1000)
   const forwardAbort = () => controller.abort(); request.signal?.addEventListener('abort', forwardAbort, { once: true })
@@ -25,8 +47,8 @@ export async function callAI(config: AIConfig, apiKey: string, request: AIReques
     }
     const response = await fetch(endpoint(config), { method:'POST', headers:{'content-type':'application/json', Authorization:`Bearer ${apiKey}`}, signal:controller.signal, body:JSON.stringify({ model:config.model, temperature:config.temperature ?? .4, max_tokens:config.maxTokens ?? 1600, messages:[{role:'system',content:request.system},{role:'user',content:request.prompt}] }) })
     if (!response.ok) throw new AIClientError(mapHttp(response.status), errorMessage[mapHttp(response.status)])
-    const data = await response.json() as { choices?: Array<{ message?: { content?: string } }>; usage?: { total_tokens?: number } }
-    const text = data.choices?.[0]?.message?.content
+    const data = await response.json() as { choices?: Array<{ message?: OpenAIMessage; text?: string }>; output_text?: string; usage?: { total_tokens?: number } }
+    const text = openAIResponseText(data)
     if (!text) throw new AIClientError('INVALID_RESPONSE', errorMessage.INVALID_RESPONSE)
     return { text, tokens:data.usage?.total_tokens }
   } catch (error) {

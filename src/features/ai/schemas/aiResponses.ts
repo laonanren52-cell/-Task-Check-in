@@ -18,12 +18,76 @@ export type AIDailyInsight = z.infer<typeof aiDailyInsightSchema>
 export const aiReviewDraftSchema = z.object({ review: z.string().max(1000), achievement: z.string().max(700), problem: z.string().max(700), satisfaction: z.string().max(700), nextStep: z.string().max(500) })
 export type AIReviewDraft = z.infer<typeof aiReviewDraftSchema>
 
+const parseError = () => new Error('AI 返回格式异常，请重新生成。')
+
+function balancedJsonAt(text: string, start: number): string | undefined {
+  const opening = text[start]
+  if (opening !== '{' && opening !== '[') return undefined
+
+  const expectedClosers: string[] = [opening === '{' ? '}' : ']']
+  let quote: '"' | "'" | undefined
+  let escaped = false
+
+  for (let index = start + 1; index < text.length; index += 1) {
+    const character = text[index]
+    if (quote) {
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === quote) quote = undefined
+      continue
+    }
+    if (character === '"' || character === "'") { quote = character; continue }
+    if (character === '{') expectedClosers.push('}')
+    else if (character === '[') expectedClosers.push(']')
+    else if (character === '}' || character === ']') {
+      if (expectedClosers.at(-1) !== character) return undefined
+      expectedClosers.pop()
+      if (expectedClosers.length === 0) return text.slice(start, index + 1)
+    }
+  }
+  return undefined
+}
+
+function jsonCandidates(text: string): string[] {
+  const candidates: string[] = []
+  const add = (candidate?: string) => {
+    const normalized = candidate?.trim()
+    if (normalized && !candidates.includes(normalized)) candidates.push(normalized)
+  }
+
+  const normalized = text.replace(/^\uFEFF/, '').trim()
+  for (const match of normalized.matchAll(/```(?:json|JSON)?\s*([\s\S]*?)```/g)) add(match[1])
+  for (let index = 0; index < normalized.length; index += 1) {
+    if (normalized[index] === '{' || normalized[index] === '[') add(balancedJsonAt(normalized, index))
+  }
+  add(normalized)
+  return candidates
+}
+
+function repairJson(candidate: string): string {
+  return candidate
+    .replace(/[“”]/g, '"')
+    .replace(/[‘’]/g, "'")
+    .replace(/，(?=\s*[}\]])/g, ',')
+    .replace(/,\s*([}\]])/g, '$1')
+}
+
+function parseCandidate(candidate: string): unknown {
+  const parsed = JSON.parse(candidate)
+  return typeof parsed === 'string' ? JSON.parse(parsed.trim()) : parsed
+}
+
 export function parseAIJson<T>(text: string, schema: z.ZodType<T>): T {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1] ?? text
-  const start = fenced.indexOf(fenced.trimStart().startsWith('[') ? '[' : '{')
-  const end = Math.max(fenced.lastIndexOf(']'), fenced.lastIndexOf('}'))
-  if (start < 0 || end < start) throw new Error('AI 返回格式异常，请重新生成。')
-  const result = schema.safeParse(JSON.parse(fenced.slice(start, end + 1)))
-  if (!result.success) throw new Error('AI 返回格式异常，请重新生成。')
-  return result.data
+  const candidates = jsonCandidates(text)
+  for (const candidate of candidates) {
+    for (const attempt of [candidate, repairJson(candidate)]) {
+      try {
+        const result = schema.safeParse(parseCandidate(attempt))
+        if (result.success) return result.data
+      } catch {
+        // Try the next JSON-shaped response before reporting a format error.
+      }
+    }
+  }
+  throw parseError()
 }
