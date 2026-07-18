@@ -16,5 +16,6 @@ output/
 .tauri/
 .tools/
 summerflow-dev.*.log
+.summerflow-*.log
 SummerFlow-Backup-*.json
 SummerFlow-Diagnostics-*.json

@@ -11,11 +11,11 @@ export const aiTaskBreakdownSchema = z.object({
 export type AITaskBreakdown = z.infer<typeof aiTaskBreakdownSchema>
 
 export const aiDailyInsightSchema = z.object({
-  facts: z.array(z.string().min(1)).max(6), inferences: z.array(z.string().min(1)).max(5), suggestions: z.array(z.string().min(1)).max(5), summary: z.string().min(1).max(600),
+  facts: z.array(z.string().min(1)).max(6).default([]), inferences: z.array(z.string().min(1)).max(5).default([]), suggestions: z.array(z.string().min(1)).max(5).default([]), summary: z.string().min(1).max(600),
 })
 export type AIDailyInsight = z.infer<typeof aiDailyInsightSchema>
 
-export const aiReviewDraftSchema = z.object({ review: z.string().max(1000), achievement: z.string().max(700), problem: z.string().max(700), satisfaction: z.string().max(700), nextStep: z.string().max(500) })
+export const aiReviewDraftSchema = z.object({ review: z.string().max(1000).optional(), overall: z.string().max(1000).optional(), achievement: z.string().max(700).default(''), problem: z.string().max(700).default(''), satisfaction: z.string().max(700).default(''), nextStep: z.string().max(500).default('') }).transform(value => ({ review:value.review ?? value.overall ?? '', achievement:value.achievement, problem:value.problem, satisfaction:value.satisfaction, nextStep:value.nextStep }))
 export type AIReviewDraft = z.infer<typeof aiReviewDraftSchema>
 
 const parseError = () => new Error('AI 返回格式异常，请重新生成。')

@@ -4,8 +4,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SummerFlowDatabase } from '../db/database'
 import { defaultAIPreferences, defaultMeta, defaultSettings } from '../db/defaults'
 import { buildAIContext } from '../features/ai/services/contextBuilder'
-import { aiDailyInsightSchema, aiTaskBreakdownSchema, aiTaskPlanSchema, parseAIJson } from '../features/ai/schemas/aiResponses'
-import { AIClientError, callAI } from '../features/ai/services/aiClient'
+import { aiDailyInsightSchema, aiReviewDraftSchema, aiTaskBreakdownSchema, aiTaskPlanSchema, parseAIJson } from '../features/ai/schemas/aiResponses'
+import { AIClientError, callAI, getProviderCapability } from '../features/ai/services/aiClient'
 import { backupSchema } from '../features/backup/schema'
 import type { AIConfig, Task } from '../types'
 
@@ -39,6 +39,30 @@ describe('SummerFlow AI',()=>{
     expect(result.text).toContain('summary');expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(JSON.parse(String(fetchMock.mock.calls[0][1].body)).response_format).toEqual({type:'json_object'})
     expect(JSON.parse(String(fetchMock.mock.calls[1][1].body)).response_format).toBeUndefined()
+  })
+  it('uses DeepSeek json_object and only parses message.content, never reasoning_content',async()=>{
+    const fetchMock=vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{reasoning_content:'this is chain of thought, not JSON',content:'{"summary":"稳定","facts":[],"inferences":[],"suggestions":[]}'}}],usage:{total_tokens:55}}),{status:200}))
+    vi.stubGlobal('fetch',fetchMock)
+    const config:AIConfig={id:'deepseek',displayName:'DeepSeek',provider:'deepseek',baseUrl:'https://api.deepseek.com',model:'deepseek-v4-pro',enabled:true,isDefault:true,createdAt:'',updatedAt:''}
+    const result=await callAI(config,'not-logged',{system:'Return JSON',prompt:'Return JSON',jsonMode:'object'})
+    expect(JSON.parse(result.text).summary).toBe('稳定');expect(result.hasReasoningContent).toBe(true)
+    const body=JSON.parse(String(fetchMock.mock.calls[0][1].body))
+    expect(body.response_format).toEqual({type:'json_object'});expect(body.thinking).toEqual({type:'enabled'});expect(body.reasoning_effort).toBe('high');expect(body.max_tokens).toBeGreaterThanOrEqual(4096)
+  })
+  it('never selects json_schema for official DeepSeek V4, including legacy OpenAI-compatible configs',()=>{
+    const capability=getProviderCapability({id:'deepseek',displayName:'DeepSeek',provider:'openai-compatible',baseUrl:'https://api.deepseek.com',model:'deepseek-v4-pro',enabled:true,isDefault:true,createdAt:'',updatedAt:''})
+    expect(capability).toMatchObject({adapter:'deepseek',supportsJsonObject:true,supportsJsonSchema:false,parser:'content-only'})
+  })
+  it('retries one DeepSeek empty content response instead of parsing reasoning_content',async()=>{
+    const fetchMock=vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{reasoning_content:'only thinking',content:''}}]}),{status:200}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{"summary":"recovered","facts":[],"inferences":[],"suggestions":[]}'}}]}),{status:200}))
+    vi.stubGlobal('fetch',fetchMock)
+    const result=await callAI({id:'deepseek',displayName:'DeepSeek',provider:'deepseek',baseUrl:'https://api.deepseek.com',model:'deepseek-v4-pro',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'Return JSON',prompt:'Return JSON',jsonMode:'object'})
+    expect(fetchMock).toHaveBeenCalledTimes(2);expect(JSON.parse(result.text).summary).toBe('recovered')
+  })
+  it('accepts the DeepSeek organizer overall field while keeping the UI review field stable',()=>{
+    expect(parseAIJson('{"overall":"今天推进顺利","achievement":"完成实验"}',aiReviewDraftSchema).review).toBe('今天推进顺利')
   })
   it('identifies a token-truncated response before JSON parsing',async()=>{
     vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"summary":"partial"'}}]}),{status:200})))

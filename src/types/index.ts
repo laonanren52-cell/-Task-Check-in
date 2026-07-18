@@ -93,7 +93,7 @@ export interface AppMeta {
   onboardingCompleted: boolean
 }
 
-export type AIProvider = 'openai-compatible' | 'gemini' | 'custom'
+export type AIProvider = 'openai-compatible' | 'deepseek' | 'gemini' | 'custom'
 export type AIFeature = 'planner' | 'breakdown' | 'review' | 'copilot' | 'organize-review'
 
 /** Non-secret model metadata. API keys are deliberately kept out of IndexedDB. */

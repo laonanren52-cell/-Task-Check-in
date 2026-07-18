@@ -2,6 +2,16 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.3] - 2026-07-19
+
+### Fixed
+
+- Added an explicit DeepSeek V4 adapter for `https://api.deepseek.com` and `deepseek-v4-pro` / `deepseek-v4-flash` configurations, including legacy configurations saved as OpenAI Compatible.
+- DeepSeek structured responses now use `response_format: { "type": "json_object" }`; JSON Schema mode is never sent to DeepSeek V4.
+- Thinking responses now parse `message.content` only. `reasoning_content` is logged only as diagnostics metadata and is never passed to JSON parsing or Zod validation.
+- DeepSeek empty `content` responses retry once and then show a precise empty-response error; truncated output remains a distinct Max Tokens error.
+- Added a per-configuration DeepSeek diagnostic that verifies text, JSON Object, and Thinking modes and displays the recommended safe mode.
+
 ## [0.2.2] - 2026-07-18
 
 ### Fixed
