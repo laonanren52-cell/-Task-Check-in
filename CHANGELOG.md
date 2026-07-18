@@ -2,6 +2,13 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.1.4] - 2026-07-18
+
+### Fixed
+
+- 修复任务编辑抽屉在首次输入后错误夺取焦点的问题；任务名称、具体子任务、完成结果和备注现在可以连续输入。
+- 新增任务编辑抽屉的输入焦点回归测试，覆盖中文输入法组合、粘贴、删除与多行文本场景。
+
 ## [0.1.2] - 2026-07-17
 
 ### Fixed
