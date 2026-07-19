@@ -10,7 +10,8 @@ import { Dialog } from '../components/ui/Dialog'
 import { EmptyState } from '../components/ui/States'
 import { useToast } from '../components/ui/Toast'
 import { DailyReviewEditor } from '../features/checkins/DailyReviewEditor'
-import { dailyStats, longestStreak, totalPoints } from '../features/statistics'
+import { longestStreak, totalPoints } from '../features/statistics'
+import { getCanonicalDailySummary } from '../features/statistics/canonicalDailySummary'
 import { TaskList } from '../features/tasks/TaskList'
 import { AIPlannerDrawer } from '../features/ai/components/AIPlannerDrawer'
 import { defaultSelectedDate, isoToday } from '../lib/date'
@@ -24,7 +25,7 @@ export function TodayPage() {
     () => tasks.filter(task => task.date === selected).sort((a, b) => a.order - b.order),
     [tasks, selected],
   )
-  const stats = dailyStats(dateTasks)
+  const summary = useMemo(() => getCanonicalDailySummary(tasks, dailyRecords, selected), [tasks, dailyRecords, selected])
   const record = dailyRecords.find(item => item.date === selected)
   const [confirmCancel, setConfirmCancel] = useState(false)
   const [planning, setPlanning] = useState(false)
@@ -79,9 +80,9 @@ export function TodayPage() {
     <section className="day-overview grid-flow-dense today-reveal">
       <div className="day-overview__main">
         <span>当天完成进度</span>
-        <strong>{stats.done} / {stats.taskCount} 项任务</strong>
-        <div className="progress"><i style={{ width: `${Math.round(stats.rate * 100)}%` }} /></div>
-        <p>{Math.round(stats.rate * 100)}% 完成率 · 计划 {stats.planned} 分钟 · 实际 {stats.actual} 分钟 · 专注 {stats.focus || 0}</p>
+        <strong>{summary.completedTaskCount} / {summary.taskCount} 项任务</strong>
+        <div className="progress"><i style={{ width: `${summary.completionRate}%` }} /></div>
+        <p>{summary.completionRate}% 完成率 · 计划 {summary.plannedMinutes} 分钟 · 实际 {summary.actualMinutes} 分钟 · 专注 {summary.averageFocus || 0}</p>
       </div>
       <Metric icon={<Calendar />} value={`${checkedDays}`} unit="天" label="累计打卡" />
       <Metric icon={<Clock3 />} value={`${Math.round(cumulativeMinutes / 60 * 10) / 10}`} unit="小时" label="累计学习" />
@@ -91,7 +92,7 @@ export function TodayPage() {
     </section>
     {makeup && <div className="makeup-note">你正在查看过去日期的学习记录。完成打卡会明确标记为补签记录。</div>}
     <section className="section-block today-reveal">
-      <div className="section-heading"><div><span className="eyebrow">当日任务</span><h2>专注于下一件重要的事</h2></div><span>{stats.taskCount} 项有效任务</span></div>
+      <div className="section-heading"><div><span className="eyebrow">当日任务</span><h2>专注于下一件重要的事</h2></div><span>{summary.taskCount} 项有效任务</span></div>
       {dateTasks.length
         ? <TaskList tasks={dateTasks} reorder />
         : <EmptyState title="这一天还没有任务" description="添加一项清晰、可完成的学习目标，统计会实时更新。" action={<Button onClick={openNewTask}><Plus />添加任务</Button>} />}

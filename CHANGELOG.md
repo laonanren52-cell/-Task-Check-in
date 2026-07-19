@@ -2,6 +2,15 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.5] - 2026-07-19
+
+### Fixed
+
+- Unified the Today page and AI review on one canonical daily summary, so selected-date totals, completion rate, study time, focus, and points are computed locally once and cannot be reinterpreted by the model.
+- Separated unfinished tasks for the selected day from historical backlog tasks; unfinished P1 work from other dates can no longer be reported as today's remaining work.
+- Reworked AI Today Review into a concise, companion-style format: one-sentence recap, what went well, useful adjustments, and tomorrow's first actions. Local metrics are rendered by the app instead of model output.
+- Added a single consistency retry and a safe rejection path for AI text that explicitly contradicts canonical task counts or durations, plus an outdated-result notice after task data changes.
+
 ## [0.2.4] - 2026-07-19
 
 ### Fixed

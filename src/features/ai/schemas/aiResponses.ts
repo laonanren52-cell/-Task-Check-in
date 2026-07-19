@@ -11,7 +11,11 @@ export const aiTaskBreakdownSchema = z.object({
 export type AITaskBreakdown = z.infer<typeof aiTaskBreakdownSchema>
 
 export const aiDailyInsightSchema = z.object({
-  facts: z.array(z.string().min(1)).max(6).default([]), inferences: z.array(z.string().min(1)).max(5).default([]), suggestions: z.array(z.string().min(1)).max(5).default([]), summary: z.string().min(1).max(600),
+  headline: z.string().min(1).max(240),
+  positive: z.array(z.string().min(1)).max(2).default([]),
+  adjustment: z.array(z.string().min(1)).max(2).default([]),
+  tomorrowActions: z.array(z.string().min(1)).max(3).default([]),
+  tone: z.enum(['steady', 'encouraging', 'gentle-adjustment', 'rest']).default('steady'),
 })
 export type AIDailyInsight = z.infer<typeof aiDailyInsightSchema>
 

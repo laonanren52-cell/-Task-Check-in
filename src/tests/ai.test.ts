@@ -24,30 +24,30 @@ describe('SummerFlow AI',()=>{
   it('accepts AI JSON wrapped in prose, Markdown, or a JSON string',()=>{
     const task = '[{"title":"Review C pointers","priority":"P1","plannedDuration":60,"subtasks":["arrays"],"reason":"foundation first"}]'
     expect(parseAIJson(`建议如下：\n${task}`,aiTaskPlanSchema)).toHaveLength(1)
-    expect(parseAIJson(`这是今天的分析：\n\`\`\`json\n{"summary":"进度稳定","facts":["完成 1 项任务"],"inferences":[],"suggestions":[]}\n\`\`\``,aiDailyInsightSchema).summary).toBe('进度稳定')
+    expect(parseAIJson(`这是今天的分析：\n\`\`\`json\n{"headline":"进度稳定","positive":["完成 1 项任务"],"adjustment":[],"tomorrowActions":[],"tone":"steady"}\n\`\`\``,aiDailyInsightSchema).headline).toBe('进度稳定')
     expect(parseAIJson(JSON.stringify(task),aiTaskPlanSchema)[0].priority).toBe('P1')
   })
   it('repairs one common trailing-comma response but still rejects invalid shapes',()=>{
-    const response = '{"summary":"进度稳定","facts":["完成 1 项任务",],"inferences":[],"suggestions":[],}'
-    expect(parseAIJson(response,aiDailyInsightSchema).facts).toEqual(['完成 1 项任务'])
+    const response = '{"headline":"进度稳定","positive":["完成 1 项任务",],"adjustment":[],"tomorrowActions":[],}'
+    expect(parseAIJson(response,aiDailyInsightSchema).positive).toEqual(['完成 1 项任务'])
     expect(()=>parseAIJson('今天做得不错',aiDailyInsightSchema)).toThrow('AI 返回格式异常')
   })
   it('falls back when an OpenAI-compatible provider rejects response_format',async()=>{
     const fetchMock = vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({ error:{ message:'response_format is unsupported' } }),{status:400}))
-      .mockResolvedValueOnce(new Response(JSON.stringify({ choices:[{ finish_reason:'stop', message:{ content:'{"summary":"稳定","facts":[],"inferences":[],"suggestions":[]}' } }], usage:{total_tokens:25} }),{status:200}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices:[{ finish_reason:'stop', message:{ content:'{"headline":"稳定","positive":[],"adjustment":[],"tomorrowActions":[]}' } }], usage:{total_tokens:25} }),{status:200}))
     vi.stubGlobal('fetch',fetchMock)
     const result=await callAI({id:'ai',displayName:'Test',provider:'custom',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'test',prompt:'return JSON',jsonMode:'object'})
-    expect(result.text).toContain('summary');expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(result.text).toContain('headline');expect(fetchMock).toHaveBeenCalledTimes(2)
     expect(JSON.parse(String(fetchMock.mock.calls[0][1].body)).response_format).toEqual({type:'json_object'})
     expect(JSON.parse(String(fetchMock.mock.calls[1][1].body)).response_format).toBeUndefined()
   })
   it('uses DeepSeek json_object and only parses message.content, never reasoning_content',async()=>{
-    const fetchMock=vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{reasoning_content:'this is chain of thought, not JSON',content:'{"summary":"稳定","facts":[],"inferences":[],"suggestions":[]}'}}],usage:{total_tokens:55}}),{status:200}))
+    const fetchMock=vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{reasoning_content:'this is chain of thought, not JSON',content:'{"headline":"稳定","positive":[],"adjustment":[],"tomorrowActions":[]}'}}],usage:{total_tokens:55}}),{status:200}))
     vi.stubGlobal('fetch',fetchMock)
     const config:AIConfig={id:'deepseek',displayName:'DeepSeek',provider:'deepseek',baseUrl:'https://api.deepseek.com',model:'deepseek-v4-pro',enabled:true,isDefault:true,createdAt:'',updatedAt:''}
     const result=await callAI(config,'not-logged',{system:'Return JSON',prompt:'Return JSON',jsonMode:'object'})
-    expect(JSON.parse(result.text).summary).toBe('稳定');expect(result.hasReasoningContent).toBe(true)
+    expect(JSON.parse(result.text).headline).toBe('稳定');expect(result.hasReasoningContent).toBe(true)
     const body=JSON.parse(String(fetchMock.mock.calls[0][1].body))
     expect(body.response_format).toEqual({type:'json_object'});expect(body.thinking).toEqual({type:'enabled'});expect(body.reasoning_effort).toBe('high');expect(body.max_tokens).toBeGreaterThanOrEqual(4096)
   })
@@ -58,10 +58,10 @@ describe('SummerFlow AI',()=>{
   it('retries one DeepSeek empty content response instead of parsing reasoning_content',async()=>{
     const fetchMock=vi.fn()
       .mockResolvedValueOnce(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{reasoning_content:'only thinking',content:''}}]}),{status:200}))
-      .mockResolvedValueOnce(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{"summary":"recovered","facts":[],"inferences":[],"suggestions":[]}'}}]}),{status:200}))
+      .mockResolvedValueOnce(new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{"headline":"recovered","positive":[],"adjustment":[],"tomorrowActions":[]}'}}]}),{status:200}))
     vi.stubGlobal('fetch',fetchMock)
     const result=await callAI({id:'deepseek',displayName:'DeepSeek',provider:'deepseek',baseUrl:'https://api.deepseek.com',model:'deepseek-v4-pro',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'Return JSON',prompt:'Return JSON',jsonMode:'object'})
-    expect(fetchMock).toHaveBeenCalledTimes(2);expect(JSON.parse(result.text).summary).toBe('recovered')
+    expect(fetchMock).toHaveBeenCalledTimes(2);expect(JSON.parse(result.text).headline).toBe('recovered')
   })
   it('accepts the DeepSeek organizer overall field while keeping the UI review field stable',()=>{
     expect(parseAIJson('{"overall":"今天推进顺利","achievement":"完成实验"}',aiReviewDraftSchema).review).toBe('今天推进顺利')
@@ -76,7 +76,7 @@ describe('SummerFlow AI',()=>{
     expect(outputLanguageInstruction('zh-CN')).toContain('简体中文')
     const prompts=[planPrompt('学习 STM32',{}),breakdownPrompt(task,{}),reviewPrompt({}),organizeReviewPrompt('完成 Python 练习',{}),copilotPrompt('我明天学什么？',{})]
     for(const prompt of prompts) expect(`${prompt.system}\n${prompt.prompt}`).toMatch(/[\u3400-\u9fff]/)
-    expect(reviewPrompt({}).prompt).toContain('今天计划偏多')
+    expect(reviewPrompt({}).prompt).toContain('当日最终汇总')
   })
   it('identifies a token-truncated response before JSON parsing',async()=>{
     vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"summary":"partial"'}}]}),{status:200})))
@@ -84,7 +84,7 @@ describe('SummerFlow AI',()=>{
   })
   it('filters private learning fields from AI context when permissions are off',()=>{
     const context=buildAIContext({tasks:[task],dailyRecords:[],themes:[{id:'theme',name:'Project',color:'#000',icon:'Book',order:0,createdAt:'',updatedAt:''}],subjects:[{id:'subject',name:'C',color:'#000',order:0,createdAt:'',updatedAt:''}],templates:[],settings:defaultSettings(),permissions:{tasks:false,durations:false,focus:false,reviews:false,goals:false,recentHistory:false},outputLanguage:'zh-CN'},task.date)
-    expect(context.今日任务).toEqual([]);expect(context.未完成的P1任务).toEqual([]);expect('最近7天任务' in context).toBe(false);expect('暑期目标' in context).toBe(false)
+    expect(context.今日任务).toEqual([]);expect(context.今日未完成P1任务).toEqual([]);expect('最近7天任务' in context).toBe(false);expect('暑期目标' in context).toBe(false)
   })
   it('only accepts redacted API keys in normal JSON backups',()=>{
     const valid={schemaVersion:4,exportedAt:'2026-07-18',settings:defaultSettings(),themes:[],subjects:[],templates:[],tasks:[],dailyRecords:[],aiConfigs:[{id:'ai',displayName:'Test',provider:'openai-compatible',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'2026-07-18',updatedAt:'2026-07-18',apiKey:null}]}
