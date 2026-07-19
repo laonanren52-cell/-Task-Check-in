@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.4] - 2026-07-19
+
+### Fixed
+
+- Fixed AI responses defaulting to English in the Simplified Chinese application by adding a shared output-language preference and system-level language instruction.
+- Added Chinese model context labels, Chinese JSON examples, and one constrained language-correction retry that preserves JSON fields, facts, values, user-provided names, and technical terms.
+- Added an explicit fallback action for temporarily viewing a schema-valid result when its language still does not match the active preference.
+
 ## [0.2.3] - 2026-07-19
 
 ### Fixed

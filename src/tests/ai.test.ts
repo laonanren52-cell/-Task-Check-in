@@ -6,6 +6,8 @@ import { defaultAIPreferences, defaultMeta, defaultSettings } from '../db/defaul
 import { buildAIContext } from '../features/ai/services/contextBuilder'
 import { aiDailyInsightSchema, aiReviewDraftSchema, aiTaskBreakdownSchema, aiTaskPlanSchema, parseAIJson } from '../features/ai/schemas/aiResponses'
 import { AIClientError, callAI, getProviderCapability } from '../features/ai/services/aiClient'
+import { isLikelyWrongOutputLanguage, outputLanguageInstruction, resolveOutputLanguage } from '../features/ai/services/outputLanguage'
+import { breakdownPrompt, copilotPrompt, organizeReviewPrompt, planPrompt, reviewPrompt } from '../features/ai/prompts/prompts'
 import { backupSchema } from '../features/backup/schema'
 import type { AIConfig, Task } from '../types'
 
@@ -64,13 +66,25 @@ describe('SummerFlow AI',()=>{
   it('accepts the DeepSeek organizer overall field while keeping the UI review field stable',()=>{
     expect(parseAIJson('{"overall":"今天推进顺利","achievement":"完成实验"}',aiReviewDraftSchema).review).toBe('今天推进顺利')
   })
+  it('defaults follow-app to Simplified Chinese and does not flag technical terms as English output',()=>{
+    expect(resolveOutputLanguage({outputLanguage:'follow-app'})).toBe('zh-CN')
+    expect(isLikelyWrongOutputLanguage('今天完成 STM32、DCDC 与 Python 练习。','zh-CN')).toBe(false)
+    expect(isLikelyWrongOutputLanguage('Today planned too many tasks and should reduce the schedule.','zh-CN')).toBe(true)
+    expect(isLikelyWrongOutputLanguage('今天完成了 3 项任务，建议先处理 P1。','en-US')).toBe(true)
+  })
+  it('uses one Chinese language instruction and Chinese JSON examples across all AI prompts',()=>{
+    expect(outputLanguageInstruction('zh-CN')).toContain('简体中文')
+    const prompts=[planPrompt('学习 STM32',{}),breakdownPrompt(task,{}),reviewPrompt({}),organizeReviewPrompt('完成 Python 练习',{}),copilotPrompt('我明天学什么？',{})]
+    for(const prompt of prompts) expect(`${prompt.system}\n${prompt.prompt}`).toMatch(/[\u3400-\u9fff]/)
+    expect(reviewPrompt({}).prompt).toContain('今天计划偏多')
+  })
   it('identifies a token-truncated response before JSON parsing',async()=>{
     vi.stubGlobal('fetch',vi.fn().mockResolvedValue(new Response(JSON.stringify({choices:[{finish_reason:'length',message:{content:'{"summary":"partial"'}}]}),{status:200})))
     await expect(callAI({id:'ai',displayName:'Test',provider:'openai-compatible',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'',updatedAt:''},'not-logged',{system:'test',prompt:'return JSON',jsonMode:'object'})).rejects.toMatchObject({code:'TRUNCATED'} satisfies Partial<AIClientError>)
   })
   it('filters private learning fields from AI context when permissions are off',()=>{
-    const context=buildAIContext({tasks:[task],dailyRecords:[],themes:[{id:'theme',name:'Project',color:'#000',icon:'Book',order:0,createdAt:'',updatedAt:''}],subjects:[{id:'subject',name:'C',color:'#000',order:0,createdAt:'',updatedAt:''}],templates:[],settings:defaultSettings(),permissions:{tasks:false,durations:false,focus:false,reviews:false,goals:false,recentHistory:false}},task.date)
-    expect(context.todayTasks).toEqual([]);expect(context.unfinishedPriorityTasks).toEqual([]);expect('recentTasks' in context).toBe(false);expect('goals' in context).toBe(false)
+    const context=buildAIContext({tasks:[task],dailyRecords:[],themes:[{id:'theme',name:'Project',color:'#000',icon:'Book',order:0,createdAt:'',updatedAt:''}],subjects:[{id:'subject',name:'C',color:'#000',order:0,createdAt:'',updatedAt:''}],templates:[],settings:defaultSettings(),permissions:{tasks:false,durations:false,focus:false,reviews:false,goals:false,recentHistory:false},outputLanguage:'zh-CN'},task.date)
+    expect(context.今日任务).toEqual([]);expect(context.未完成的P1任务).toEqual([]);expect('最近7天任务' in context).toBe(false);expect('暑期目标' in context).toBe(false)
   })
   it('only accepts redacted API keys in normal JSON backups',()=>{
     const valid={schemaVersion:4,exportedAt:'2026-07-18',settings:defaultSettings(),themes:[],subjects:[],templates:[],tasks:[],dailyRecords:[],aiConfigs:[{id:'ai',displayName:'Test',provider:'openai-compatible',baseUrl:'https://example.com/v1',model:'model',enabled:true,isDefault:true,createdAt:'2026-07-18',updatedAt:'2026-07-18',apiKey:null}]}

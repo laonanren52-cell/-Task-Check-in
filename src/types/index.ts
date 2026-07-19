@@ -126,6 +126,7 @@ export interface AIPermissions {
 export interface AIPreferences {
   id: 'preferences'
   permissions: AIPermissions
+  outputLanguage: 'follow-app' | 'zh-CN' | 'en-US'
   consentedAt?: string
   updatedAt: string
 }

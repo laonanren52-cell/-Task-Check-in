@@ -17,4 +17,4 @@ export const defaultThemes = (): Theme[] => themeNames.map((name,order)=>({id:st
 export const defaultSubjects = (): Subject[] => subjectNames.map((name,order)=>({id:stableId('subject',name),name,color:colors[(order+2)%colors.length],order,createdAt:now(),updatedAt:now()}))
 export const defaultTemplates = (): TaskTemplate[] => templateNames.map((name,order)=>({id:stableId('template',name),name,detail:'',priority:'P2',plannedDuration:60,order,createdAt:now(),updatedAt:now()}))
 export const defaultMeta = (): AppMeta => ({key:'meta',schemaVersion:4,migratedFromLegacy:false,onboardingCompleted:false})
-export const defaultAIPreferences = (): AIPreferences => ({ id: 'preferences', permissions: { tasks: true, durations: true, focus: true, reviews: true, goals: true, recentHistory: true }, updatedAt: now() })
+export const defaultAIPreferences = (): AIPreferences => ({ id: 'preferences', permissions: { tasks: true, durations: true, focus: true, reviews: true, goals: true, recentHistory: true }, outputLanguage:'follow-app', updatedAt: now() })
