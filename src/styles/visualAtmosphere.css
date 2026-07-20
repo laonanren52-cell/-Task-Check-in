@@ -1,0 +1,92 @@
+:root {
+  --atmosphere-sage: rgba(128, 159, 142, .12);
+  --atmosphere-slate: rgba(112, 137, 164, .11);
+  --atmosphere-copper: rgba(177, 134, 81, .07);
+  --chart-forest: #315f50;
+  --chart-mist: #6c879b;
+  --chart-copper: #ad8045;
+  --chart-plum: #81758f;
+  --chart-sage: #7f9c86;
+}
+
+body::before,
+body::after {
+  content: '';
+  position: fixed;
+  z-index: -2;
+  pointer-events: none;
+  border-radius: 999px;
+  filter: blur(56px);
+  opacity: .68;
+}
+
+body::before {
+  width: min(56vw, 760px);
+  height: min(42vw, 560px);
+  top: -17vw;
+  right: -11vw;
+  background: radial-gradient(circle, var(--atmosphere-slate), transparent 68%);
+}
+
+body::after {
+  width: min(50vw, 680px);
+  height: min(44vw, 600px);
+  left: -16vw;
+  bottom: -22vw;
+  background: radial-gradient(circle, var(--atmosphere-sage), transparent 68%);
+}
+
+.workspace::before {
+  content: '';
+  position: fixed;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(43, 71, 59, .035) .65px, transparent .65px);
+  background-size: 8px 8px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, .35), transparent 58%);
+}
+
+.page-header,
+.section-block,
+.dashboard-summary,
+.chart-container,
+.review-editor,
+.settings-panel {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .76) inset;
+}
+
+.button,
+.icon-button,
+.sidebar nav a,
+.mobile-nav a,
+.floating-add {
+  transition: transform 180ms cubic-bezier(.16, 1, .3, 1), box-shadow 180ms cubic-bezier(.16, 1, .3, 1), background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.button:not(:disabled):active,
+.icon-button:active,
+.floating-add:active { transform: translateY(1px) scale(.985); }
+
+.task-card,
+.chart-container,
+.overview-metric,
+.dashboard-summary,
+.settings-panel {
+  transition: transform 220ms cubic-bezier(.16, 1, .3, 1), box-shadow 220ms cubic-bezier(.16, 1, .3, 1), border-color 220ms ease;
+}
+
+@media (hover: hover) {
+  .chart-container:hover,
+  .overview-metric:hover { transform: translateY(-2px); border-color: #c8d5ca; box-shadow: 0 16px 34px rgba(37, 62, 50, .075); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+@media (max-width: 768px) {
+  .workspace { margin-left: 0 !important; width: 100%; }
+  body::before { width: 92vw; height: 62vw; top: -24vw; right: -30vw; }
+  body::after { width: 90vw; height: 66vw; left: -35vw; }
+}

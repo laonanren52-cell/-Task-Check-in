@@ -9,6 +9,7 @@ import type { Task, TaskStatus } from '../../types'
 import { PriorityIndicator, statusLabels } from './StatusBadge'
 import { TaskDrawer } from './TaskDrawer'
 import { AITaskBreakdownDrawer } from '../ai/components/AITaskBreakdownDrawer'
+import './taskVisuals.css'
 
 const statuses = Object.entries(statusLabels) as [TaskStatus, string][]
 
@@ -57,14 +58,16 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
   }
 
   if (!tasks.length) return null
-  return <div className="task-list">
-    {tasks.map((task, index) => <article className={`task-card task-card--${task.priority.toLowerCase()}`} key={task.id} draggable={reorder} onDragStart={event => event.dataTransfer.setData('text/plain', task.id)} onDragOver={event => reorder && event.preventDefault()} onDrop={event => drop(event.dataTransfer.getData('text/plain'), task.id)} style={{ '--index': index } as React.CSSProperties}>
+  return <div className="task-list task-list--editorial">
+    {tasks.map((task, index) => <article className={`task-card task-card--${task.priority.toLowerCase()} ${task.status === 'done' ? 'is-done' : ''}`} key={task.id} draggable={reorder} onDragStart={event => event.dataTransfer.setData('text/plain', task.id)} onDragOver={event => reorder && event.preventDefault()} onDrop={event => drop(event.dataTransfer.getData('text/plain'), task.id)} style={{ '--index': index, '--effort': `${Math.min(100, task.plannedDuration ? task.actualDuration / task.plannedDuration * 100 : 0)}%` } as React.CSSProperties}>
+      <div className="task-card__rail" aria-hidden="true"><i /><span>{task.priority}</span></div>
       {reorder && <GripVertical className="task-card__grip" aria-label="拖动排序" />}
       <button className={`task-check ${task.status === 'done' ? 'is-checked' : ''}`} onClick={() => complete(task)} aria-label={task.status === 'done' ? '取消完成' : '快速完成'}><Check /></button>
       <button className="task-card__body" onClick={() => setEditing(task)}>
         <div className="task-card__meta"><PriorityIndicator priority={task.priority} /><span>{theme.get(task.themeId) ?? '未分类'}</span><span>{subject.get(task.subjectId) ?? '未分类'}</span></div>
         <h3>{task.name}</h3><p>{task.detail || '尚未补充子任务'}</p>
-        <div className="task-card__stats"><span>计划 {task.plannedDuration} 分钟</span><span>实际 {task.actualDuration} 分钟</span><span>专注 {task.focusScore ?? 0}</span><span>精力 {task.energyScore ?? 0}</span></div>
+        <div className="task-card__effort"><div><span>计划 {task.plannedDuration} 分钟</span><b>实际 {task.actualDuration} 分钟</b></div><i /></div>
+        <div className="task-card__stats"><span>专注 {task.focusScore ?? 0}</span><span>精力 {task.energyScore ?? 0}</span></div>
         {task.output && <div className="task-output">成果：{task.output}</div>}{task.note && <div className="task-note">备注：{task.note}</div>}
       </button>
       <div className="task-card__side"><select className={`quick-status badge--${task.status}`} value={task.status} onChange={event => changeStatus(task, event.target.value as TaskStatus)} aria-label={`修改“${task.name}”的状态`}>{statuses.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button ref={element => { triggers.current[task.id] = element }} className="more-menu__trigger" aria-label="更多操作" aria-expanded={activeMenu === task.id} onClick={() => setActiveMenu(activeMenu === task.id ? undefined : task.id)}><MoreHorizontal /></button></div>

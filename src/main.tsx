@@ -1,6 +1,8 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import './styles.css'
+import './styles/visualAtmosphere.css'
+import './styles/workspaceVisuals.css'
 import App from './app/App'
 
 // The desktop app loads bundled assets directly. Do not let a browser-installed
