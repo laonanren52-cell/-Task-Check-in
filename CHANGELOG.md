@@ -2,6 +2,19 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.7] - 2026-07-21
+
+### Improved
+
+- Reworked the Today workspace into a clearer daily focus flow, with an editorial overview, learning-progress observatory, and a more purposeful task entry state.
+- Refined task cards with priority rails, study-time comparison, calmer completion states, and responsive layouts that remain readable as task counts grow.
+- Rebuilt the Insights page around learning rhythm, weekly momentum, ranked study allocation, and more informative empty states instead of default dashboard cards.
+- Added a restrained visual atmosphere and motion layer across Today, Insights, Tasks, Calendar, and Settings while respecting reduced-motion preferences.
+
+### Notes
+
+- This update does not migrate or alter IndexedDB learning data, AI configurations, or the Tauri application identifier.
+
 ## [0.2.6] - 2026-07-21
 
 ### Fixed
