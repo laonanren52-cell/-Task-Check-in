@@ -60,9 +60,10 @@ export function TaskList({ tasks, reorder = false }: { tasks: Task[]; reorder?: 
   if (!tasks.length) return null
   return <div className="task-list task-list--editorial">
     {tasks.map((task, index) => <article className={`task-card task-card--${task.priority.toLowerCase()} ${task.status === 'done' ? 'is-done' : ''}`} key={task.id} draggable={reorder} onDragStart={event => event.dataTransfer.setData('text/plain', task.id)} onDragOver={event => reorder && event.preventDefault()} onDrop={event => drop(event.dataTransfer.getData('text/plain'), task.id)} style={{ '--index': index, '--effort': `${Math.min(100, task.plannedDuration ? task.actualDuration / task.plannedDuration * 100 : 0)}%` } as React.CSSProperties}>
-      <div className="task-card__rail" aria-hidden="true"><i /><span>{task.priority}</span></div>
-      {reorder && <GripVertical className="task-card__grip" aria-label="拖动排序" />}
-      <button className={`task-check ${task.status === 'done' ? 'is-checked' : ''}`} onClick={() => complete(task)} aria-label={task.status === 'done' ? '取消完成' : '快速完成'}><Check /></button>
+      <div className="task-card__controls">
+        {reorder && <GripVertical className="task-card__grip" aria-label="拖动排序" />}
+        <button className={`task-check ${task.status === 'done' ? 'is-checked' : ''}`} onClick={() => complete(task)} aria-label={task.status === 'done' ? '取消完成' : '快速完成'}><Check /></button>
+      </div>
       <button className="task-card__body" onClick={() => setEditing(task)}>
         <div className="task-card__meta"><PriorityIndicator priority={task.priority} /><span>{theme.get(task.themeId) ?? '未分类'}</span><span>{subject.get(task.subjectId) ?? '未分类'}</span></div>
         <h3>{task.name}</h3><p>{task.detail || '尚未补充子任务'}</p>

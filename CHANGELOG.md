@@ -2,6 +2,18 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.8] - 2026-07-21
+
+### Fixed
+
+- Restored the Today task card to a stable three-column layout so task content stays in the primary reading column while status and actions remain top-right.
+- Removed the conditional grid-child mismatch that moved task controls to a new row when drag sorting was enabled.
+- Fixed long task titles and subtask descriptions so they wrap or truncate naturally without creating excess whitespace.
+
+### Notes
+
+- This update does not alter IndexedDB learning data, task ordering, AI settings, or the Tauri application identifier.
+
 ## [0.2.7] - 2026-07-21
 
 ### Improved
