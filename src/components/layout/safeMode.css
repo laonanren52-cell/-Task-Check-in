@@ -1,0 +1,12 @@
+/* Recovery mode deliberately removes non-essential motion and visual effects.
+   It never changes persisted tasks, reviews, IndexedDB records, or AI settings. */
+.safe-mode .workspace::before { display: none; }
+.safe-mode *,
+.safe-mode *::before,
+.safe-mode *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+.safe-mode .floating-copilot { display: none; }

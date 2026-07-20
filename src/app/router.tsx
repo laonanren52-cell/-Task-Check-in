@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { AppShell } from '../components/layout/AppShell'
+import { RouteErrorBoundary } from '../components/ui/RouteErrorBoundary'
 import { LoadingState } from '../components/ui/States'
 
 const TodayPage = lazy(() => import('../pages/TodayPage').then(module => ({ default: module.TodayPage })))
@@ -14,6 +15,7 @@ const load = (page: React.ReactNode) => <Suspense fallback={<LoadingState />}>{p
 export const router = createBrowserRouter([{
   path: '/',
   element: <AppShell />,
+  errorElement: <RouteErrorBoundary />,
   children: [
     { index: true, element: <Navigate to="/today" replace /> },
     { path: 'today', element: load(<TodayPage />) },

@@ -2,6 +2,14 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.6] - 2026-07-21
+
+### Fixed
+
+- Fixed a production startup crash (`Maximum update depth exceeded`) caused by the AI daily-review component creating a new Zustand selector snapshot on every render.
+- Replaced the React Router default crash page with a SummerFlow recovery screen that offers reload, return-to-today, safe mode, diagnostic export, and log-folder access on desktop.
+- Added safe mode (`?safeMode=1`) to disable non-essential motion and the floating AI entry without modifying IndexedDB tasks, check-ins, reviews, or AI configuration.
+
 ## [0.2.5] - 2026-07-19
 
 ### Fixed

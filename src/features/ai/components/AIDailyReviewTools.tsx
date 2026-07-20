@@ -15,7 +15,10 @@ type StoredInsight = { value: AIDailyInsight; sourceHash: string }
 type RawResult = { mode: 'analysis' | 'organize'; text: string }
 
 export function AIDailyReviewTools({ date, value, onApply }: { date: string; value: DailyRecord; onApply: (draft: Partial<DailyRecord>) => void }) {
-  const { tasks, dailyRecords } = useAppStore(state => ({ tasks: state.tasks, dailyRecords: state.dailyRecords }))
+  // Subscribe to each stable store reference separately. Returning a new object
+  // from a Zustand selector makes React 19's useSyncExternalStore retry forever.
+  const tasks = useAppStore(state => state.tasks)
+  const dailyRecords = useAppStore(state => state.dailyRecords)
   const summary = useMemo(() => getCanonicalDailySummary(tasks, dailyRecords, date), [tasks, dailyRecords, date])
   const sourceHash = canonicalSummarySourceHash(summary, dailyRecords.find(record => record.date === date))
   const [insight, setInsight] = useState<StoredInsight>()

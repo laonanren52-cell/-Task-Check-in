@@ -1,0 +1,13 @@
+.route-error-page { min-height: 100dvh; display: grid; place-items: center; padding: 26px; background: #f7f8f4; color: #25463b; }
+.route-error-card { width: min(620px, 100%); display: grid; justify-items: start; gap: 15px; padding: clamp(28px, 5vw, 52px); border: 1px solid #d4ddd4; border-radius: 24px; background: rgba(255, 255, 252, .95); box-shadow: 0 22px 60px rgba(33, 62, 49, .12); }
+.route-error-card__mark { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 14px; background: #f8ece9; color: #984d48; }
+.route-error-card__mark svg { width: 23px; }
+.route-error-card h1 { margin: -6px 0 0; font-size: clamp(28px, 4vw, 40px); letter-spacing: -.05em; }
+.route-error-card p { max-width: 510px; margin: 0; color: #5d7067; font-size: 15px; line-height: 1.7; }
+.route-error-actions, .route-error-tools { display: flex; flex-wrap: wrap; gap: 9px; }
+.route-error-tools { padding-top: 2px; }
+.route-error-card > small { color: #65766e; font-size: 13px; }
+.route-error-card details { width: 100%; color: #6f7d76; font-size: 12px; }
+.route-error-card summary { cursor: pointer; }
+.route-error-card code { display: block; max-height: 100px; overflow: auto; margin-top: 8px; padding: 9px; border-radius: 8px; background: #f1f3ef; overflow-wrap: anywhere; white-space: pre-wrap; }
+@media (max-width: 640px) { .route-error-page { padding: 17px; } .route-error-card { border-radius: 19px; } .route-error-actions .button { width: 100%; justify-content: center; } }
