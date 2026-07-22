@@ -2,6 +2,18 @@
 
 All notable SummerFlow changes are recorded here. Versions follow Semantic Versioning.
 
+## [0.2.9] - 2026-07-22
+
+### Fixed
+
+- Reworked the task editor into a compact, adaptive floating drawer on desktop so short forms no longer leave a large empty area below the content.
+- Returned the task form and the collapsed “成果与备注” section to normal document flow; hidden fields no longer reserve height.
+- Kept the action bar inside the drawer with sticky behavior only when the form needs to scroll, while preserving a full-screen, keyboard-friendly mobile layout.
+
+### Notes
+
+- This update does not alter IndexedDB learning data, task structure, task ordering, AI settings, or the Tauri application identifier.
+
 ## [0.2.8] - 2026-07-21
 
 ### Fixed
